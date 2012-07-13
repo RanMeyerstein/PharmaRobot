@@ -42,10 +42,12 @@ protected:
 	CButton  m_ButtonConnect;
 	CButton  m_ButtonStock;
 	CButton  m_ButtonDispense;
-	char StockMessage[42];
+	char     StockMessage[42];
+	int      m_OrderNum;
 public:
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnBnClickedButton2();
+	afx_msg void OnBnClickedButton3();
 };

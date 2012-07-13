@@ -126,12 +126,22 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	nidApp.hIcon = m_hIcon; 
 	nidApp.uCallbackMessage = WM_SYSCOMMAND; 
 	wcscpy_s(nidApp.szTip, _T("Yael Hayafa Banashim"));
+	m_OrderNum = 0;
 
 	Shell_NotifyIcon(NIM_ADD, &nidApp);
 
 	// TODO: Add extra initialization here
 	m_EditBarCodeB.SetWindowTextW(L"1234567890123");
 	m_EditCounterUnitB.SetWindowTextW(L"1");
+	m_EditCounterUnitA.SetWindowTextW(L"1");
+	m_EditBarCodeA.SetWindowTextW(L"1234567890123");
+	m_EditDispenser.SetWindowTextW(L"1");
+	m_EditPriority.SetWindowTextW(L"3");
+	m_EditQuantity.SetWindowTextW(L"1");
+	WCHAR strQuan[10];
+	wsprintf(strQuan,L"%d",m_OrderNum);
+	m_EditOrderNum.SetWindowTextW(strQuan);
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -290,9 +300,35 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 }
 
 
-
-
 void CPharmaRobot10Dlg::OnBnClickedButton3()
 {
-	// TODO: Add your control notification handler code here
+
+	if(m_EditCounterUnitA.GetWindowTextLengthW() > 3)
+	{
+		m_listBoxMain.AddString(L"Bad Counter unit to big (up to 3 digits)");
+		return;
+	}
+	if(m_EditBarCodeA.GetWindowTextLengthW() > 13)
+	{
+		m_listBoxMain.AddString(L"Bad Barcode number (up to 13 digits)");
+		return;
+	}
+	if(m_EditDispenser.GetWindowTextLengthW() > 3)
+	{
+		m_listBoxMain.AddString(L"Bad Dispemser number (up to 3 digits)");
+		return;
+	}
+	if(m_EditPriority.GetWindowTextLengthW() > 1)
+	{
+		m_listBoxMain.AddString(L"Bad Priority (one digit)");
+		return;
+	}
+	if(m_EditQuantity.GetWindowTextLengthW() > 5)
+	{
+		m_listBoxMain.AddString(L"Bad Quantity (up to 5 digits)");
+		return;
+	}
+ 
+
+
 }
