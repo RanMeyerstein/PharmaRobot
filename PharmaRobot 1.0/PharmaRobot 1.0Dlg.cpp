@@ -1,4 +1,4 @@
-
+﻿
 // PharmaRobot 1.0Dlg.cpp : implementation file
 //
 
@@ -125,7 +125,7 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	nidApp.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP; 
 	nidApp.hIcon = m_hIcon; 
 	nidApp.uCallbackMessage = WM_SYSCOMMAND; 
-	wcscpy_s(nidApp.szTip, _T("Yael Hayafa Banashim"));
+	wcscpy_s(nidApp.szTip, _T("יעל היפה בנשים"));
 	m_OrderNum = 0;
 
 	Shell_NotifyIcon(NIM_ADD, &nidApp);
