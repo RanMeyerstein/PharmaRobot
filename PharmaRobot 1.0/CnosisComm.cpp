@@ -1,0 +1,279 @@
+
+#include "stdafx.h"
+#include "ConsisComm.h"
+#define CONSIS_PORT "2765"
+#define DEFAULT_BUFLEN 512
+
+
+typedef long (*CIGetLastSystemError) (void);
+CIGetLastSystemError ptCIGetLastSystemError = {NULL};
+
+typedef SOCKET (*CIGetSocket)( void );
+CIGetSocket ptCIGetSocket = {NULL};
+
+typedef int (*CIOpen)( char * pszClientName );
+CIOpen ptCIOpen = {NULL};
+
+typedef int (*CIClose)(void);
+CIClose ptCIClose = {NULL};
+
+typedef int (*CISendMessg)( char *pszMessg, int iMessgLen, long lTimeout );
+CISendMessg ptCISendMessg = {NULL};
+
+typedef int (*CIRecvMessg)( char *pszMessg, int * piLen, char *pbMessgPending, long lTimeout);
+CIRecvMessg ptCIRecvMessg = {NULL};
+
+typedef int (*CIRecvMessgNB)( char *pszMessg, int * piLen, char *pbMessgPending, long lTimeout);
+CIRecvMessgNB ptCIRecvMessgNB = {NULL};
+
+typedef int (*CIDeleteResponse)(void);
+CIDeleteResponse ptCIDeleteResponse;
+
+ConsisComm::ConsisComm()
+{
+	hinstLibCD = NULL;
+	hinstLibCD = NULL;
+	ConnectionStarted = FALSE;
+    sprintf_s (clinetname,"ShorTAbachnink");
+}
+
+ConsisComm::~ConsisComm()
+{
+	BOOL fFreeResult;
+
+	if (result != NULL)
+	{
+		WSACleanup();
+	}
+
+	if (ConnectionStarted == TRUE)
+	{
+		int ret = ptCIClose();
+		if (ret != 0 )		{
+			OutputDebugString(L"Closed successfuly with returned value\n");// = %d\n", ret);
+		}
+		else		{
+			OutputDebugString(L"Failed to close Connection with Client\n");
+		}
+
+		fFreeResult = FreeLibrary(hinstLibAce);
+		fFreeResult = FreeLibrary(hinstLibCD);
+	}
+}
+
+int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
+{
+	WCHAR mbstring[256];
+	char * message;
+	char message_buf[2048];
+	int  message_len = 0;
+	int  rc;
+	char pending;
+	const size_t newsize = 100;
+	size_t convertedChars = 0;
+
+	if (ConnectionStarted == FALSE)
+	{
+		// Get a handle to the DLL module.
+		hinstLibAce = LoadLibrary(TEXT("ace.dll")); 
+		hinstLibCD =  LoadLibrary(TEXT("cdclient.dll"));
+
+		m_dlglistBox = dlglistBox;
+		m_dlglistBox->AddString(L"Loaded DLLs");
+
+		if ((hinstLibCD != NULL) || (hinstLibCD != NULL) )
+		{
+			ConnectionStarted = TRUE;
+			ptCIGetLastSystemError = (CIGetLastSystemError)GetProcAddress(hinstLibCD, "CIGetLastSystemError"); 
+			ptCIGetSocket = (CIGetSocket)GetProcAddress(hinstLibCD, "CIGetSocket");
+			ptCIOpen =  (CIOpen)GetProcAddress(hinstLibCD, "CIOpen");
+			ptCIClose = (CIClose)GetProcAddress(hinstLibCD, "CIClose");
+			ptCISendMessg = (CISendMessg)GetProcAddress(hinstLibCD, "CISendMessg");
+			ptCIRecvMessg = (CIRecvMessg)GetProcAddress(hinstLibCD, "CIRecvMessg");
+			ptCIRecvMessgNB = (CIRecvMessgNB)GetProcAddress(hinstLibCD, "CIRecvMessgNB");
+			ptCIDeleteResponse = (CIDeleteResponse)GetProcAddress(hinstLibCD, "CIDeleteResponse");
+
+			// If the function address is valid, call the function.
+
+			if (NULL != ptCIGetLastSystemError) 		{
+				OutputDebugString(L"Got ptCIGetLastSystemError function pointer\n");// 0x%x \n",ptCIGetLastSystemError); 
+			}
+			if (NULL != ptCIGetSocket) 		{
+				OutputDebugString(L"Got ptCIGetSocket function pointer\n");// 0x%x \n", ptCIGetSocket); 
+			}
+			if (NULL != ptCIOpen) 		{
+				OutputDebugString(L"Got ptCIOpen function pointer\n");//0x%x \n",ptCIOpen); 
+			}
+			if (NULL != ptCIClose) 		{
+				OutputDebugString(L"Got ptCIClose function pointer\n");// 0x%x \n",ptCIClose); 
+			}
+			if (NULL != ptCISendMessg) 		{
+				OutputDebugString(L"Got ptCISendMessg function pointer\n");// 0x%x \n",ptCISendMessg); 
+			}
+			if (NULL != ptCIRecvMessg) 		{
+				OutputDebugString(L"Got ptCIRecvMessg function pointer \n");//0x%x \n",ptCIRecvMessg); 
+			}
+			if (NULL != ptCIRecvMessgNB) 		{
+				OutputDebugString(L"Got ptCIRecvMessgNB function pointer\n");// 0x%x \n",ptCIRecvMessgNB); 
+			}
+			if (NULL != ptCIDeleteResponse) 		{
+				OutputDebugString(L"Got ptCIClose function pointer \n");//0x%x \n",ptCIDeleteResponse); 
+			}
+
+			// Free the DLL module.
+
+			OutputDebugString(L"ptCIGetLastSystemError returned\n");// %d\n",ptCIGetLastSystemError());
+			/*
+			SOCKET sock = NULL;
+			sock = ptCIGetSocket();
+
+			OutputDebugString(L"ptCIGetSocket returned socket number\n");// = %d\n", sock);
+			*/
+			int ret = ptCIOpen(clinetname);
+			if (ret != 0 )		{
+				OutputDebugString(L"Opened successfuly with returned value\n");// = %d\n", ret);
+			}
+			else		{
+				OutputDebugString(L"Failed to open Connection with Client\n");
+			}
+
+			message = "R" "001" "C113" "004ASPIR";
+			rc = ptCISendMessg( message, strlen(message),3000);
+			if(rc!=0)
+			{
+				dlglistBox->AddString(L"sending R-message failed");//,rc);
+	//			return 0;
+			}
+			else
+				dlglistBox->AddString(L"sent succesful\n");//,message);
+			
+			/*
+			* get the r-result message
+			*/
+			message_len = sizeof(message_buf); //ensure that the message_len field always contains the length of
+			//the buffer before calling
+			rc = ptCIRecvMessg( message_buf, &message_len, &pending,1000); //blocks until a message is pending
+			if(rc!=0)
+			{
+				OutputDebugString(L"receiving R-response failed\n");//,rc);
+				m_dlglistBox->AddString(L"receiving R-response failed");
+			}
+			else
+			{
+				message_buf[message_len]= '\0';
+				OutputDebugString(L"got result:%s\n");//,message_buf);
+				size_t origsize = strlen(message_buf) + 1;
+				wchar_t wcstring[newsize];
+				mbstowcs_s(&convertedChars, wcstring, origsize, message_buf, _TRUNCATE);
+				wsprintf(mbstring,L"got result %s",wcstring);
+				m_dlglistBox->AddString(mbstring);
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
+
+int ConsisComm::SendStockQuery(char* MessageContent)
+{
+	int rc = ptCISendMessg( MessageContent, strlen(MessageContent),3000);
+	if(rc!=0)
+		m_dlglistBox->AddString(L"sending stock query failed");
+
+	char message_buf[1024];
+	char pending;
+	int message_len = sizeof(message_buf);
+	rc = ptCIRecvMessgNB( message_buf, &message_len, &pending,1000); //block at most 1 second
+	if(rc!=0)
+	{
+		m_dlglistBox->AddString(L"no message to receive");
+
+	}
+	else
+	{
+		message_buf[message_len]= '\0';
+		size_t convertedChars = 0;
+		wchar_t wcstring[1024];
+		mbstowcs_s(&convertedChars, wcstring, message_len + 1, message_buf, _TRUNCATE);
+		m_dlglistBox->AddString(wcstring);
+	}
+
+	return 0;
+}
+
+
+
+#if 0
+int ConsisComm::ConnectToConsis(char* clientName)
+{
+
+
+	struct addrinfo * ptr = NULL,
+		hints;
+
+	result = NULL;
+	
+	ZeroMemory( &hints, sizeof(hints) );
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	hints.ai_flags = AI_PASSIVE;
+
+	// Resolve the server address and port
+	int iResult = getaddrinfo(NULL, CONSIS_PORT, &hints, &result);
+	if (iResult != 0) {
+		OutputDebugString(L"getaddrinfo failed: %d\n", iResult);
+		WSACleanup();
+		return 1;
+	}
+
+	SOCKET ConnectSocket = INVALID_SOCKET;
+
+	// Attempt to connect to the first address returned by
+	// the call to getaddrinfo
+	ptr=result;
+
+	// Create a SOCKET for connecting to server
+	ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, 
+		ptr->ai_protocol);
+
+	if (ConnectSocket == INVALID_SOCKET) {
+		OutputDebugString(L"Error at socket(): %ld\n", WSAGetLastError());
+		freeaddrinfo(result);
+		WSACleanup();
+
+		return 1;
+	}
+
+	iResult = connect( ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+	if (iResult == SOCKET_ERROR) {
+		closesocket(ConnectSocket);
+		ConnectSocket = INVALID_SOCKET;
+	}
+
+	//RanM For delete freeaddrinfo(result);
+
+	if (ConnectSocket == INVALID_SOCKET) {
+		OutputDebugString(L"Unable to connect to server!\n");
+		WSACleanup();
+		return 1;
+	}
+
+	int recvbuflen = DEFAULT_BUFLEN;
+
+	char *sendbuf = "this is a test";
+	char recvbuf[DEFAULT_BUFLEN];
+
+
+	iResult = closesocket(ConnectSocket);
+	if (iResult == SOCKET_ERROR) {
+		wprintf(L"closesocket failed with error = %d\n", WSAGetLastError() );
+		WSACleanup();
+		return 1;
+	}    
+
+
+	return 0;
+}
+#endif
