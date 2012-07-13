@@ -84,6 +84,7 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 	ON_BN_CLICKED(IDCANCEL, &CPharmaRobot10Dlg::OnBnClickedCancel)
 	ON_BN_CLICKED(IDC_BUTTON1, &CPharmaRobot10Dlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CPharmaRobot10Dlg::OnBnClickedButton2)
+	ON_BN_CLICKED(IDC_BUTTON3, &CPharmaRobot10Dlg::OnBnClickedButton3)
 END_MESSAGE_MAP()
 
 
@@ -289,3 +290,9 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 }
 
 
+
+
+void CPharmaRobot10Dlg::OnBnClickedButton3()
+{
+	// TODO: Add your control notification handler code here
+}
