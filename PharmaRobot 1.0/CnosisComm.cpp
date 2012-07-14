@@ -202,7 +202,37 @@ int ConsisComm::SendStockQuery(char* MessageContent)
 	return 0;
 }
 
+int ConsisComm::SendDispnseCommand(char* MessageContent)
+{
+	int rc = ptCISendMessg( MessageContent, strlen(MessageContent),3000);
+	if(rc!=0)
+		m_dlglistBox->AddString(L"sending dispense command failed");
 
+	char message_buf[1024];
+	memset(message_buf, 0, 1024);
+	char pending;
+	int message_len = sizeof(message_buf);
+
+	do{
+		rc = ptCIRecvMessgNB( message_buf, &message_len, &pending,1000); //block at most 1 second
+		if(rc!=0)
+		{
+			m_dlglistBox->AddString(L"no message to receive");
+			break;
+
+		}
+		else
+		{
+			message_buf[message_len]= '\0';
+			size_t convertedChars = 0;
+			wchar_t wcstring[1024];
+			mbstowcs_s(&convertedChars, wcstring, message_len + 1, message_buf, _TRUNCATE);
+			m_dlglistBox->AddString(wcstring);
+		}
+	}while (message_buf[16] != '5');
+
+	return 1;
+}
 
 #if 0
 int ConsisComm::ConnectToConsis(char* clientName)

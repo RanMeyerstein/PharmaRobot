@@ -42,7 +42,7 @@ protected:
 	CButton  m_ButtonConnect;
 	CButton  m_ButtonStock;
 	CButton  m_ButtonDispense;
-	char     StockMessage[42];
+	char     ConsisMessage[512];
 	int      m_OrderNum;
 public:
 	afx_msg void OnBnClickedOk();

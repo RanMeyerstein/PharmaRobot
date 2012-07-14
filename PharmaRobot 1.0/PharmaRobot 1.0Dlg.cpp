@@ -257,8 +257,8 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	WCHAR orig[14];
     char nstring[100];
 
-	memset(StockMessage, '0', 41);
-	StockMessage[41] = '\0';
+	memset(ConsisMessage, '0', 41);
+	ConsisMessage[41] = '\0';
 
 	size_t convertedChars = 0;
 
@@ -280,7 +280,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	int location = 4 - m_EditCounterUnitB.GetWindowTextLengthW();
 
-	memcpy(&(StockMessage[location]), nstring, origsize - 1);
+	memcpy(&(ConsisMessage[location]), nstring, origsize - 1);
 
 	/*Barcode*/
 	origsize = m_EditBarCodeB.GetWindowTextLengthW() + 1;
@@ -288,20 +288,28 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	location = 41 - m_EditBarCodeB.GetWindowTextLengthW();
 
-	memcpy((void*)&(StockMessage[location]), (void*) nstring, origsize - 1);
+	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, origsize - 1);
 
-	StockMessage[0] = 'B';
+	ConsisMessage[0] = 'B';
 
-	mbstowcs_s(&convertedChars, wcstring, 42, StockMessage, _TRUNCATE);
+	mbstowcs_s(&convertedChars, wcstring, 42, ConsisMessage, _TRUNCATE);
 
 	m_listBoxMain.AddString(wcstring);
 
-	Consis.SendStockQuery(StockMessage);
+	Consis.SendStockQuery(ConsisMessage);
 }
 
 
 void CPharmaRobot10Dlg::OnBnClickedButton3()
 {
+	wchar_t wcstring[100];
+	WCHAR orig[14];
+    char nstring[100];
+
+	memset(ConsisMessage, '0', 512);
+	ConsisMessage[61] = '\0';
+
+	size_t convertedChars = 0;
 
 	if(m_EditCounterUnitA.GetWindowTextLengthW() > 3)
 	{
@@ -330,5 +338,64 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 	}
  
 
+	/*Counter Unit*/
+    size_t origsize = m_EditCounterUnitA.GetWindowTextLengthW() + 1;
+ 	m_EditCounterUnitA.GetWindowTextW(orig,origsize);
+	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+	int location = 12 - (origsize - 1);
 
+	memcpy(&(ConsisMessage[location]), nstring, (origsize - 1));
+
+	m_OrderNum++; if (m_OrderNum > 99999999) m_OrderNum = 0;//for every request increase number
+	WCHAR strQuan[10];
+	wsprintf(strQuan,L"%d",m_OrderNum);
+	m_EditOrderNum.SetWindowTextW(strQuan);
+
+	/*Barcode*/
+	origsize = m_EditBarCodeA.GetWindowTextLengthW() + 1;
+	m_EditBarCodeA.GetWindowTextW(orig,origsize);
+	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+	location = 60 - (origsize - 1);
+
+	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
+
+	/*Order number*/
+	origsize = m_EditOrderNum.GetWindowTextLengthW() + 1;
+	m_EditOrderNum.GetWindowTextW(orig,origsize);
+	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+	location = 9 - (origsize - 1);
+
+	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
+
+	/*Quantity*/
+	origsize = m_EditQuantity.GetWindowTextLengthW() + 1;
+	m_EditQuantity.GetWindowTextW(orig,origsize);
+	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+	location = 30 - (origsize - 1);
+
+	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
+
+	/*Priority*/
+	origsize = m_EditPriority.GetWindowTextLengthW() + 1;
+	m_EditPriority.GetWindowTextW(orig,origsize);
+	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+	location = 16 - (origsize - 1);
+
+	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
+
+	/*Dispenser*/
+	origsize = m_EditDispenser.GetWindowTextLengthW() + 1;
+	m_EditDispenser.GetWindowTextW(orig,origsize);
+	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+	location = 15 - (origsize - 1);
+
+	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
+
+	ConsisMessage[0] = 'A';
+
+	mbstowcs_s(&convertedChars, wcstring, 61, ConsisMessage, _TRUNCATE);
+
+	m_listBoxMain.AddString(wcstring);
+
+	Consis.SendDispnseCommand(ConsisMessage);
 }

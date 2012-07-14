@@ -14,6 +14,7 @@ public:
 	bool ConnectionStarted;
 	int ConnectToConsis(char* clientName, CListBox * dlglistBox); 
 	int SendStockQuery(char* MessageContent);
+	int SendDispnseCommand(char* MessageContent);
 
 private:
 
