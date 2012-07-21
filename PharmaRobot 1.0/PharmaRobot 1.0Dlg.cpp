@@ -12,7 +12,7 @@
 #endif
 
 extern "C" {
-//extern int CIOpenStd( char * pszClientName );
+	//extern int CIOpenStd( char * pszClientName );
 
 }
 
@@ -23,13 +23,13 @@ class CAboutDlg : public CDialogEx
 public:
 	CAboutDlg();
 
-// Dialog Data
+	// Dialog Data
 	enum { IDD = IDD_ABOUTBOX };
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
-// Implementation
+	// Implementation
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -74,6 +74,21 @@ void CPharmaRobot10Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON2, m_ButtonStock);
 	DDX_Control(pDX, IDC_BUTTON1, m_ButtonConnect);
 	DDX_Control(pDX, IDC_BUTTON3, m_ButtonDispense);
+	DDX_Control(pDX, IDC_TAB1, m_TabControl);
+
+	DDX_Control(pDX, IDC_STATIC1, m_Static1);
+	DDX_Control(pDX, IDC_STATIC2, m_Static2);
+	DDX_Control(pDX, IDC_STATIC3, m_Static3);
+	DDX_Control(pDX, IDC_STATIC4, m_Static4);
+	DDX_Control(pDX, IDC_STATIC5, m_Static5);
+	DDX_Control(pDX, IDC_STATIC6, m_Static6);
+	DDX_Control(pDX, IDC_STATIC7, m_Static7);
+	DDX_Control(pDX, IDC_STATIC8, m_Static8);
+	DDX_Control(pDX, IDC_STATIC9, m_Static9);
+	DDX_Control(pDX, IDC_STATIC10, m_Static10);
+	//*/
+
+	
 }
 
 BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
@@ -85,6 +100,7 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON1, &CPharmaRobot10Dlg::OnBnClickedButton1)
 	ON_BN_CLICKED(IDC_BUTTON2, &CPharmaRobot10Dlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON3, &CPharmaRobot10Dlg::OnBnClickedButton3)
+	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CPharmaRobot10Dlg::OnTcnSelchangeTab1)
 END_MESSAGE_MAP()
 
 
@@ -142,6 +158,17 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	wsprintf(strQuan,L"%d",m_OrderNum);
 	m_EditOrderNum.SetWindowTextW(strQuan);
 
+	TCITEM tcItem;
+	tcItem.mask = TCIF_TEXT;
+	tcItem.pszText = _T("CONSIS");
+
+	m_TabControl.InsertItem(0,&tcItem);
+
+	tcItem.mask = TCIF_TEXT;
+	tcItem.pszText = _T("SQL");
+
+	m_TabControl.InsertItem(1,&tcItem);
+	
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -151,7 +178,7 @@ void CPharmaRobot10Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 	{
 		Shell_NotifyIcon(NIM_DELETE,&nidApp);
 	}
-	
+
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
 	{
 		CAboutDlg dlgAbout;
@@ -160,16 +187,16 @@ void CPharmaRobot10Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 	else if ((nID & 0xFFF0) == IDI_SYSTRAYDEMO )
 	{
 		switch (LOWORD(lParam)){
-			case WM_LBUTTONDBLCLK:
-				{
-//					char strClientname[6] = {'S','h','m','o','r','T'};
-				}
-				break;
-			default:
-				{
+		case WM_LBUTTONDBLCLK:
+			{
+				//					char strClientname[6] = {'S','h','m','o','r','T'};
+			}
+			break;
+		default:
+			{
 
-				}
-				break;
+			}
+			break;
 		}
 	}
 	else
@@ -255,7 +282,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	int fieldLength;
 	wchar_t wcstring[100];
 	WCHAR orig[14];
-    char nstring[100];
+	char nstring[100];
 
 	memset(ConsisMessage, '0', 41);
 	ConsisMessage[41] = '\0';
@@ -274,8 +301,8 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	}
 
 	/*Counter Unit*/
-    size_t origsize = m_EditCounterUnitB.GetWindowTextLengthW() + 1;
- 	fieldLength = m_EditCounterUnitB.GetWindowTextLengthW();
+	size_t origsize = m_EditCounterUnitB.GetWindowTextLengthW() + 1;
+	fieldLength = m_EditCounterUnitB.GetWindowTextLengthW();
 	m_EditCounterUnitB.GetWindowTextW(orig,origsize);
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	int location = 4 - m_EditCounterUnitB.GetWindowTextLengthW();
@@ -304,7 +331,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 {
 	wchar_t wcstring[100];
 	WCHAR orig[14];
-    char nstring[100];
+	char nstring[100];
 
 	memset(ConsisMessage, '0', 512);
 	ConsisMessage[61] = '\0';
@@ -336,11 +363,11 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 		m_listBoxMain.AddString(L"Bad Quantity (up to 5 digits)");
 		return;
 	}
- 
+
 
 	/*Counter Unit*/
-    size_t origsize = m_EditCounterUnitA.GetWindowTextLengthW() + 1;
- 	m_EditCounterUnitA.GetWindowTextW(orig,origsize);
+	size_t origsize = m_EditCounterUnitA.GetWindowTextLengthW() + 1;
+	m_EditCounterUnitA.GetWindowTextW(orig,origsize);
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	int location = 12 - (origsize - 1);
 
@@ -398,4 +425,61 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 	m_listBoxMain.AddString(wcstring);
 
 	Consis.SendDispnseCommand(ConsisMessage);
+}
+
+
+void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	if (m_TabControl.GetCurSel() == 0)
+	{
+		m_EditCounterUnitB.ShowWindow(SW_SHOW);
+		m_EditBarCodeB.ShowWindow(SW_SHOW);
+		m_EditCounterUnitA.ShowWindow(SW_SHOW);
+		m_EditBarCodeA.ShowWindow(SW_SHOW);
+		m_EditDispenser.ShowWindow(SW_SHOW);
+		m_EditPriority.ShowWindow(SW_SHOW);
+		m_EditQuantity.ShowWindow(SW_SHOW);
+		m_EditOrderNum.ShowWindow(SW_SHOW);
+		m_ButtonStock.ShowWindow(SW_SHOW);
+		m_ButtonDispense.ShowWindow(SW_SHOW);
+
+		m_Static1.ShowWindow(SW_SHOW);
+		m_Static2.ShowWindow(SW_SHOW);
+		m_Static3.ShowWindow(SW_SHOW);
+		m_Static4.ShowWindow(SW_SHOW);
+		m_Static5.ShowWindow(SW_SHOW);
+		m_Static6.ShowWindow(SW_SHOW);
+		m_Static7.ShowWindow(SW_SHOW);
+		m_Static8.ShowWindow(SW_SHOW);
+		m_Static9.ShowWindow(SW_SHOW);
+		m_Static10.ShowWindow(SW_SHOW);
+
+	}
+
+	else
+	{
+		m_EditCounterUnitB.ShowWindow(SW_HIDE);
+		m_EditBarCodeB.ShowWindow(SW_HIDE);
+		m_EditCounterUnitA.ShowWindow(SW_HIDE);
+		m_EditBarCodeA.ShowWindow(SW_HIDE);
+		m_EditDispenser.ShowWindow(SW_HIDE);
+		m_EditPriority.ShowWindow(SW_HIDE);
+		m_EditQuantity.ShowWindow(SW_HIDE);
+		m_EditOrderNum.ShowWindow(SW_HIDE);
+		m_ButtonStock.ShowWindow(SW_HIDE);
+		m_ButtonDispense.ShowWindow(SW_HIDE);
+
+		m_Static1.ShowWindow(SW_HIDE);
+		m_Static2.ShowWindow(SW_HIDE);
+		m_Static3.ShowWindow(SW_HIDE);
+		m_Static4.ShowWindow(SW_HIDE);
+		m_Static5.ShowWindow(SW_HIDE);
+		m_Static6.ShowWindow(SW_HIDE);
+		m_Static7.ShowWindow(SW_HIDE);
+		m_Static8.ShowWindow(SW_HIDE);
+		m_Static9.ShowWindow(SW_HIDE);
+		m_Static10.ShowWindow(SW_HIDE);
+
+	}
+	*pResult = 0;
 }

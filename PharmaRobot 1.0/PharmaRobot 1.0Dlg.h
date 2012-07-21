@@ -42,6 +42,19 @@ protected:
 	CButton  m_ButtonConnect;
 	CButton  m_ButtonStock;
 	CButton  m_ButtonDispense;
+	CTabCtrl m_TabControl;
+
+	CStatic  m_Static1;
+	CStatic  m_Static2;
+	CStatic  m_Static3;
+	CStatic  m_Static4;
+	CStatic  m_Static5;
+	CStatic  m_Static6;
+	CStatic  m_Static7;
+	CStatic  m_Static8;	
+	CStatic  m_Static9;
+	CStatic  m_Static10;
+
 	char     ConsisMessage[512];
 	int      m_OrderNum;
 public:
@@ -50,4 +63,5 @@ public:
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnBnClickedButton2();
 	afx_msg void OnBnClickedButton3();
+	afx_msg void OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult);
 };
