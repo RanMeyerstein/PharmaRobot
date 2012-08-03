@@ -65,7 +65,6 @@ void CPharmaRobot10Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT1, m_EditCounterUnitB);
 	DDX_Control(pDX, IDC_EDIT2, m_EditBarCodeB);
 	DDX_Control(pDX, IDC_EDIT4, m_EditCounterUnitA);
-	DDX_Control(pDX, IDC_EDIT2, m_EditBarCodeB);
 	DDX_Control(pDX, IDC_EDIT8, m_EditBarCodeA);
 	DDX_Control(pDX, IDC_EDIT5, m_EditDispenser);
 	DDX_Control(pDX, IDC_EDIT6, m_EditPriority);
@@ -88,7 +87,11 @@ void CPharmaRobot10Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_STATIC10, m_Static10);
 	//*/
 
-	
+	DDX_Control(pDX, IDC_BUTTONGetSQLDesc, m_ButtonGetSQLDesc);
+	DDX_Control(pDX, IDC_LISTSQLDesc, m_ListSQLDesc);
+	DDX_Control(pDX, IDC_STATICBarcodeSQL, m_StaticBarcodeSQL);
+	DDX_Control(pDX, IDC_EDITBarcodeSQL, m_EditBarcodeSQL);
+
 }
 
 BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
@@ -101,6 +104,7 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON2, &CPharmaRobot10Dlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON3, &CPharmaRobot10Dlg::OnBnClickedButton3)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CPharmaRobot10Dlg::OnTcnSelchangeTab1)
+	ON_BN_CLICKED(IDC_BUTTONGetSQLDesc, &CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc)
 END_MESSAGE_MAP()
 
 
@@ -154,6 +158,7 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	m_EditDispenser.SetWindowTextW(L"1");
 	m_EditPriority.SetWindowTextW(L"3");
 	m_EditQuantity.SetWindowTextW(L"1");
+	m_EditBarcodeSQL.SetWindowTextW(L"7290004239988");
 	WCHAR strQuan[10];
 	wsprintf(strQuan,L"%d",m_OrderNum);
 	m_EditOrderNum.SetWindowTextW(strQuan);
@@ -168,7 +173,8 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	tcItem.pszText = _T("SQL");
 
 	m_TabControl.InsertItem(1,&tcItem);
-	
+
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -273,7 +279,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton1()
 		m_EditPriority.EnableWindow();
 		m_EditQuantity.EnableWindow();
 		m_ButtonDispense.EnableWindow();
-		m_ButtonConnect.EnableWindow(FALSE);	
+		m_ButtonConnect.EnableWindow(FALSE);
 	}
 }
 
@@ -454,6 +460,10 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_Static9.ShowWindow(SW_SHOW);
 		m_Static10.ShowWindow(SW_SHOW);
 
+		m_ListSQLDesc.ShowWindow(SW_HIDE);
+		m_EditBarcodeSQL.ShowWindow(SW_HIDE);
+		m_ButtonGetSQLDesc.ShowWindow(SW_HIDE);
+		m_StaticBarcodeSQL.ShowWindow(SW_HIDE);
 	}
 
 	else
@@ -480,6 +490,68 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_Static9.ShowWindow(SW_HIDE);
 		m_Static10.ShowWindow(SW_HIDE);
 
+		m_ListSQLDesc.ShowWindow(SW_SHOW);
+		m_EditBarcodeSQL.ShowWindow(SW_SHOW);
+		m_ButtonGetSQLDesc.ShowWindow(SW_SHOW);
+		m_StaticBarcodeSQL.ShowWindow(SW_SHOW);
+
 	}
 	*pResult = 0;
+}
+
+
+void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
+{
+	m_YarpaDb.OpenEx( _T( "ODBC;DSN=PT;SERVER=192.168.10.5;DATABASE=PIRYON;UID=sa;PWD=1234;TABLE=Xitems"),
+		CDatabase::openReadOnly |
+		CDatabase::noOdbcDialog);
+
+	 wchar_t StringSQL[100];
+
+	if(m_EditBarcodeSQL.GetWindowTextLengthW() > 13)
+	{
+		m_listBoxMain.AddString(L"Bad Barcode number (up to 13 digits)");
+		return;
+	}
+
+	m_EditBarCodeB.GetWindowTextW(StringSQL,m_EditBarCodeB.GetWindowTextLengthW() + 1);
+
+	wsprintf(StringSQL,
+		L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s'; ORDER BY BARCODE;\0",StringSQL);
+
+	CRecordset rs(&m_YarpaDb);
+	rs.Open(NULL,StringSQL,0);
+
+	rs.Close();
+
+
+	m_YarpaDb.Close();
+
+}
+
+void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
+{
+	TC_ITEM tci;
+	CDC* pDC = CDC::FromHandle(lpdis->hDC);
+	CRect rect(lpdis->rcItem);
+	wchar_t szTabText[256];
+	memset(szTabText,'\0',sizeof(szTabText));
+
+	tci.mask = TCIF_TEXT;
+	tci.pszText = szTabText;
+	tci.cchTextMax = sizeof(szTabText) -1;
+	GetItem(lpdis->itemID, &tci);
+
+	if (lpdis->itemAction & ODA_DRAWENTIRE)
+	{
+		pDC->TextOut(rect.left+5, rect.top+5, tci.pszText);
+	}
+
+	if ((lpdis->itemState & ODS_SELECTED) && 
+		(lpdis->itemAction & (ODA_SELECT | ODA_DRAWENTIRE)))
+	{
+		//Make the color of text of the selected tab to be BLUE.
+		pDC->SetTextColor(RGB(0,0,255));
+		pDC->TextOut(rect.left+5, rect.top+5, tci.pszText);
+	}
 }

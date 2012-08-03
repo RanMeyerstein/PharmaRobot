@@ -4,6 +4,15 @@
 
 #pragma once
 #include "ConsisComm.h"
+#include "afxdb.h"
+
+class CTabPharms : public CTabCtrl
+{
+public:
+	void DrawItem(LPDRAWITEMSTRUCT);
+
+};
+
 
 // CPharmaRobot10Dlg dialog
 class CPharmaRobot10Dlg : public CDialogEx
@@ -24,6 +33,8 @@ protected:
 	HICON m_hIcon;
 	NOTIFYICONDATA nidApp;
 	ConsisComm Consis;
+	CDatabase m_YarpaDb;
+
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -42,7 +53,7 @@ protected:
 	CButton  m_ButtonConnect;
 	CButton  m_ButtonStock;
 	CButton  m_ButtonDispense;
-	CTabCtrl m_TabControl;
+	CTabPharms m_TabControl;
 
 	CStatic  m_Static1;
 	CStatic  m_Static2;
@@ -55,6 +66,11 @@ protected:
 	CStatic  m_Static9;
 	CStatic  m_Static10;
 
+	CListBox m_ListSQLDesc;
+	CEdit    m_EditBarcodeSQL;
+	CButton  m_ButtonGetSQLDesc;
+	CStatic  m_StaticBarcodeSQL;
+
 	char     ConsisMessage[512];
 	int      m_OrderNum;
 public:
@@ -64,4 +80,6 @@ public:
 	afx_msg void OnBnClickedButton2();
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnBnClickedButtongetsqldesc();
 };
+
