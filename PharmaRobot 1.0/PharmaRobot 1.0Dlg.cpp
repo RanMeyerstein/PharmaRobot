@@ -7,6 +7,8 @@
 #include "PharmaRobot 1.0Dlg.h"
 #include "afxdialogex.h"
 
+//#define __DEBUGPHARMA
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -502,11 +504,11 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 
 void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 {
+	wchar_t StringSQL[100], st[100];
+
 	m_YarpaDb.OpenEx( _T( "ODBC;DSN=PT;SERVER=192.168.10.5;DATABASE=PIRYON;UID=sa;PWD=1234;TABLE=Xitems"),
 		CDatabase::openReadOnly |
 		CDatabase::noOdbcDialog);
-
-	 wchar_t StringSQL[100];
 
 	if(m_EditBarcodeSQL.GetWindowTextLengthW() > 13)
 	{
@@ -514,19 +516,42 @@ void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 		return;
 	}
 
-	m_EditBarCodeB.GetWindowTextW(StringSQL,m_EditBarCodeB.GetWindowTextLengthW() + 1);
+	m_EditBarcodeSQL.GetWindowTextW(StringSQL,m_EditBarcodeSQL.GetWindowTextLengthW() + 1);
 
-	wsprintf(StringSQL,
-		L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s'; ORDER BY BARCODE;\0",StringSQL);
+#ifdef __DEBUGPHARMA
+	wsprintf(st,L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s';ORDER BY BARCODE;\0",StringSQL);
+	m_listBoxMain.AddString(st);
+#endif
 
 	CRecordset rs(&m_YarpaDb);
-	rs.Open(NULL,StringSQL,0);
+	if (rs.Open(CRecordset::snapshot,StringSQL,CRecordset::readOnly))
+	{
+		// Create a CDBVariant object to
+		// store field data
+		CDBVariant varValue;
+		// Loop through the recordset,
+		// using GetFieldValue and
+		// GetODBCFieldCount to retrieve
+		// data in all columns
+		short nFields = rs.GetODBCFieldCount();
+		while(!rs.IsEOF())
+		{
+			for(short index = 0; index < nFields; index++)
+			{
+				rs.GetFieldValue(index, varValue);
+				m_ListSQLDesc.AddString(varValue.m_pstringW->GetString());
+			}
+			rs.MoveNext();
+		}
 
-	rs.Close();
-
+		rs.Close();
+	}
+	else
+	{
+		m_listBoxMain.AddString(L"Failed to read Barcode from SQL");
+	}
 
 	m_YarpaDb.Close();
-
 }
 
 void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
