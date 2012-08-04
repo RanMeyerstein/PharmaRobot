@@ -5,6 +5,7 @@
 #pragma once
 #include "ConsisComm.h"
 #include "afxdb.h"
+#include "afxsock.h"
 
 class CTabPharms : public CTabCtrl
 {
@@ -20,7 +21,9 @@ class CPharmaRobot10Dlg : public CDialogEx
 // Construction
 public:
 	CPharmaRobot10Dlg(CWnd* pParent = NULL);	// standard constructor
-
+	CListBox m_listBoxMain;
+	CSocket  sockSrvr;
+	CSocket  sockRecv;
 // Dialog Data
 	enum { IDD = IDD_PHARMAROBOT10_DIALOG };
 
@@ -41,7 +44,6 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
-	CListBox m_listBoxMain;
 	CEdit    m_EditCounterUnitB;
 	CEdit    m_EditBarCodeB;
 	CEdit    m_EditCounterUnitA;

@@ -6,42 +6,15 @@
 #include "PharmaRobot 1.0.h"
 #include "PharmaRobot 1.0Dlg.h"
 #include "afxdialogex.h"
-#include "Socket.h"
-#include "Iphlpapi.h"
 #include <iostream>
+#include "Iphlpapi.h"
+#include "Socket.h"
 
-HANDLE hSocketThread; 
-Socket _socket;
 char desktopIp[16] = {0};
 int port = 50004;
+
 BOOL GetDesktopIp(char *ipAddr, int len);
 
-DWORD WINAPI SocketThread(HANDLE hExitEvent)
-{
-	while (WaitForSingleObject(hExitEvent, 100) == WAIT_TIMEOUT)
-	{
-		if (_socket.IsConnected())
-		{
-			char *buffer = (char *)_socket.Receive(6);
-			if (!buffer)
-				continue;
-
-			if (buffer[0] == '`')
-			{
-
-			}
-
-			free(buffer);
-		}
-		else
-		{
-			_socket.Disconnect();
-			_socket.Connect(desktopIp, port);
-		}
-	}
-
-	return 0;
-}
 
 //#define __DEBUGPHARMA
 
@@ -145,7 +118,56 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTONGetSQLDesc, &CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc)
 END_MESSAGE_MAP()
 
+HANDLE hSocketThread;
+Socket _socket;
 
+struct PRORBTPARAMS
+{
+	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2];
+};
+
+DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pDialog)
+{
+	while (1)
+	{
+		if (_socket.IsConnected())
+		{
+			char *buffer = (char *)_socket.Receive(sizeof(PRORBTPARAMS));
+			if (!buffer)
+				continue;
+
+			if (buffer[0] == '`')
+			{
+				/*
+				switch (buffer[1])
+				{
+					case CommandGet:
+						MIC_TemperatureSensorForceEnqueue(hTempSensor);
+						break;
+
+					case CommandExit:
+						_socket.Disconnect();
+						SetEvent(hExitEvent);
+						return 0;
+
+					case CommandRestart:
+						_socket.Disconnect();
+						SetSystemPowerState(NULL, POWER_STATE_RESET, POWER_FORCE);
+				}
+				*/
+			}
+
+			free(buffer);
+		}
+		else
+		{
+			_socket.Disconnect();
+			_socket.Connect(desktopIp, port);
+		}
+	}
+
+	return 0;
+}
 // CPharmaRobot10Dlg message handlers
 
 BOOL CPharmaRobot10Dlg::OnInitDialog()
@@ -215,12 +237,14 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 
 	if (!GetDesktopIp(desktopIp, sizeof(desktopIp)))
 	{
-		std::wcout << "Failed to obtain IP. Exiting!" << endl;
+		std::wcout << "Failed to obtain IP. Exiting!";
 		std::cin.get();
 		exit(0);
 	}
 
-	hSocketThread = CreateThread(NULL, 0, SocketThread, NULL, 0, NULL);
+	hSocketThread = INVALID_HANDLE_VALUE;
+	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SocketThread, this, 0, NULL);
+
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -296,7 +320,14 @@ HCURSOR CPharmaRobot10Dlg::OnQueryDragIcon()
 
 void CPharmaRobot10Dlg::CloseEverything()
 {
-	CloseHandle(hSocketThread);
+
+	if (hSocketThread != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hSocketThread);
+		hSocketThread = INVALID_HANDLE_VALUE;
+	}
+
+
 	Shell_NotifyIcon(NIM_DELETE,&nidApp);
 }
 

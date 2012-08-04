@@ -30,6 +30,8 @@ public:
 	int SetSOLOption(int optName, void *optValue, unsigned int optLen);
 	int GetSOLOption(int optName, void *optValue, int optLen);
 
+	int ListenOnPort(int portno);
+
 protected:
 	bool CreateSocket();
 
