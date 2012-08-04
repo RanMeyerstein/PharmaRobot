@@ -3,6 +3,7 @@
 
 using namespace std;
 
+
 bool Socket::m_bWSAInitialized = FALSE;
 
 Socket::Socket(int bufferSize, HWND hCallbackWnd) : m_socket(INVALID_SOCKET), m_bufferSize(bufferSize), m_hCallbackWnd(hCallbackWnd)

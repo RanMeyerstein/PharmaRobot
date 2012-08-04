@@ -6,6 +6,42 @@
 #include "PharmaRobot 1.0.h"
 #include "PharmaRobot 1.0Dlg.h"
 #include "afxdialogex.h"
+#include "Socket.h"
+#include "Iphlpapi.h"
+#include <iostream>
+
+HANDLE hSocketThread; 
+Socket _socket;
+char desktopIp[16] = {0};
+int port = 50004;
+BOOL GetDesktopIp(char *ipAddr, int len);
+
+DWORD WINAPI SocketThread(HANDLE hExitEvent)
+{
+	while (WaitForSingleObject(hExitEvent, 100) == WAIT_TIMEOUT)
+	{
+		if (_socket.IsConnected())
+		{
+			char *buffer = (char *)_socket.Receive(6);
+			if (!buffer)
+				continue;
+
+			if (buffer[0] == '`')
+			{
+
+			}
+
+			free(buffer);
+		}
+		else
+		{
+			_socket.Disconnect();
+			_socket.Connect(desktopIp, port);
+		}
+	}
+
+	return 0;
+}
 
 //#define __DEBUGPHARMA
 
@@ -177,6 +213,15 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	m_TabControl.InsertItem(1,&tcItem);
 
 
+	if (!GetDesktopIp(desktopIp, sizeof(desktopIp)))
+	{
+		std::wcout << "Failed to obtain IP. Exiting!" << endl;
+		std::cin.get();
+		exit(0);
+	}
+
+	hSocketThread = CreateThread(NULL, 0, SocketThread, NULL, 0, NULL);
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -184,7 +229,7 @@ void CPharmaRobot10Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
 	if ((nID & 0xFFF0) == 0xF060)
 	{
-		Shell_NotifyIcon(NIM_DELETE,&nidApp);
+		CloseEverything();
 	}
 
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
@@ -249,20 +294,22 @@ HCURSOR CPharmaRobot10Dlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
+void CPharmaRobot10Dlg::CloseEverything()
+{
+	CloseHandle(hSocketThread);
+	Shell_NotifyIcon(NIM_DELETE,&nidApp);
+}
 
 void CPharmaRobot10Dlg::OnBnClickedOk()
 {
-	Shell_NotifyIcon(NIM_DELETE,&nidApp);
-	// TODO: Add your control notification handler code here
+	CloseEverything();
 	CDialogEx::OnOK();
 }
 
 
 void CPharmaRobot10Dlg::OnBnClickedCancel()
 {
-	Shell_NotifyIcon(NIM_DELETE,&nidApp);
-
+	CloseEverything();
 	CDialogEx::OnCancel();
 }
 
@@ -504,7 +551,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 
 void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 {
-	wchar_t StringSQL[100], st[100];
+	wchar_t StringSQL[100];
 
 	m_YarpaDb.OpenEx( _T( "ODBC;DSN=PT;SERVER=192.168.10.5;DATABASE=PIRYON;UID=sa;PWD=1234;TABLE=Xitems"),
 		CDatabase::openReadOnly |
@@ -519,6 +566,7 @@ void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 	m_EditBarcodeSQL.GetWindowTextW(StringSQL,m_EditBarcodeSQL.GetWindowTextLengthW() + 1);
 
 #ifdef __DEBUGPHARMA
+	wchar_t  st[100];
 	wsprintf(st,L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s';ORDER BY BARCODE;\0",StringSQL);
 	m_listBoxMain.AddString(st);
 #endif
@@ -580,3 +628,42 @@ void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
 		pDC->TextOut(rect.left+5, rect.top+5, tci.pszText);
 	}
 }
+
+BOOL GetDesktopIp(char *ipAddr, int len)
+{
+	BOOL ret = FALSE;
+
+	IP_ADAPTER_INFO *pAdapterInfo = (IP_ADAPTER_INFO *)new BYTE[sizeof(IP_ADAPTER_INFO)];
+	ULONG OutBufLen = 0;
+	DWORD res = GetAdaptersInfo(pAdapterInfo, &OutBufLen);
+	if (res == ERROR_BUFFER_OVERFLOW)
+	{
+		delete (pAdapterInfo);
+		pAdapterInfo = (IP_ADAPTER_INFO *)new BYTE[OutBufLen];
+		res = GetAdaptersInfo(pAdapterInfo, &OutBufLen);
+	}
+
+	if (res == NO_ERROR)
+	{
+		IP_ADAPTER_INFO *info = pAdapterInfo;
+		do
+		{
+			//RETAILMSG(1, (L"AdapterName = %s\r\n", info->AdapterName));
+			//if (strstr(info->AdapterName, "USB CABLE"))
+			if (strcmp(info->GatewayList.IpAddress.String,"0.0.0.0") != 0)
+			{
+				strncpy_s(ipAddr, len, info->IpAddressList.IpAddress.String, len);
+				ret = TRUE;
+				//break;
+			}
+
+			info = info->Next;
+		}
+		while (info);
+
+	}
+
+	delete (pAdapterInfo);
+	return ret;
+}
+

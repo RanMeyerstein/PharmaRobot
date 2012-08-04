@@ -73,6 +73,9 @@ protected:
 
 	char     ConsisMessage[512];
 	int      m_OrderNum;
+
+	void     CloseEverything();
+
 public:
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
