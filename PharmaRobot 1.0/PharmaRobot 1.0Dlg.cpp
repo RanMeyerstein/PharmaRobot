@@ -6,14 +6,9 @@
 #include "PharmaRobot 1.0.h"
 #include "PharmaRobot 1.0Dlg.h"
 #include "afxdialogex.h"
+#include <afxsock.h>    // For CSocket 
 #include <iostream>
 #include "Iphlpapi.h"
-#include "Socket.h"
-
-char desktopIp[16] = {0};
-int port = 50004;
-
-BOOL GetDesktopIp(char *ipAddr, int len);
 
 
 //#define __DEBUGPHARMA
@@ -21,6 +16,8 @@ BOOL GetDesktopIp(char *ipAddr, int len);
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+void HandleTCPClient(CSocket& clntSock);  // TCP client handling function
 
 extern "C" {
 	//extern int CIOpenStd( char * pszClientName );
@@ -119,54 +116,85 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 END_MESSAGE_MAP()
 
 HANDLE hSocketThread;
-Socket _socket;
 
 struct PRORBTPARAMS
 {
 	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2];
 };
 
-DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pDialog)
+DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 {
-	while (1)
-	{
-		if (_socket.IsConnected())
-		{
-			char *buffer = (char *)_socket.Receive(sizeof(PRORBTPARAMS));
-			if (!buffer)
-				continue;
+	char echoBuffer[sizeof(PRORBTPARAMS)]; // Buffer for echo string
 
-			if (buffer[0] == '`')
-			{
-				/*
-				switch (buffer[1])
-				{
-					case CommandGet:
-						MIC_TemperatureSensorForceEnqueue(hTempSensor);
-						break;
+	// Initialize the AfxSocket
+	AfxSocketInit(NULL);
 
-					case CommandExit:
-						_socket.Disconnect();
-						SetEvent(hExitEvent);
-						return 0;
+	int echoServPort = 50004;  // First arg: local port
+	CSocket servSock;                  // Socket descriptor for server
 
-					case CommandRestart:
-						_socket.Disconnect();
-						SetSystemPowerState(NULL, POWER_STATE_RESET, POWER_FORCE);
-				}
-				*/
-			}
-
-			free(buffer);
-		}
-		else
-		{
-			_socket.Disconnect();
-			_socket.Connect(desktopIp, port);
-		}
+	// Create the server socket
+	if (!servSock.Create(echoServPort)) {
+		//DieWithError("servSock.Create() failed");
 	}
 
-	return 0;
+	// Mark the socket so it will listen for incoming connections
+	if (!servSock.Listen(5)) {
+		//DieWithError("servSock.Listen() failed");
+	}
+
+
+	for(;;) { // Run forever
+		CSocket clntSock;                // Socket descriptor for client
+		SOCKADDR_IN echoClntAddr;        // Client address
+		int clntLen;                     // Length of client address data structure 
+
+		// Get the size of the in-out parameter
+		clntLen = sizeof(echoClntAddr);
+
+		// Wait for a client to connect
+		if (!servSock.Accept(clntSock)) {
+			//DieWithError("servSock.Accept() failed");
+		}
+
+		// ClntSock is connected to a client!
+
+		// Get the client's host name
+		if (!clntSock.GetPeerName((SOCKADDR*)&echoClntAddr, &clntLen)) {
+			//DieWithError("clntSock.GetPeerName() failed");
+		}
+
+		int recvMsgSize;              // Size of received message
+
+		// Recieve message from client 
+		recvMsgSize = clntSock.Receive(echoBuffer, sizeof(PRORBTPARAMS), 0);
+		if (recvMsgSize < 0) {
+			// DieWithError("clntSock.Receive() failed");
+		}
+
+		// Send received string and receive again until end of transmission
+		while (recvMsgSize > 0) {
+			// Echo message back to client
+			if (clntSock.Send(echoBuffer, recvMsgSize, 0) != recvMsgSize) {
+				//   DieWithError("clntSock.Send() sent a different number of bytes than received");
+			}
+			// See if there is more data to receive
+			recvMsgSize = clntSock.Receive(echoBuffer, sizeof(PRORBTPARAMS), 0);
+			if (recvMsgSize < 0) {
+				//  DieWithError("clntSock.Receive() more failed");
+			}
+		}
+
+		CString st;
+		st.SetString((wchar_t*)echoBuffer);
+		pdialog->m_listBoxMain.AddString(st);
+
+		clntSock.Close(); // Close client socket
+
+	}
+
+  // NOT REACHED
+
+  return 0;
 }
 // CPharmaRobot10Dlg message handlers
 
@@ -234,17 +262,8 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 
 	m_TabControl.InsertItem(1,&tcItem);
 
-
-	if (!GetDesktopIp(desktopIp, sizeof(desktopIp)))
-	{
-		std::wcout << "Failed to obtain IP. Exiting!";
-		std::cin.get();
-		exit(0);
-	}
-
 	hSocketThread = INVALID_HANDLE_VALUE;
 	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SocketThread, this, 0, NULL);
-
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -659,42 +678,3 @@ void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
 		pDC->TextOut(rect.left+5, rect.top+5, tci.pszText);
 	}
 }
-
-BOOL GetDesktopIp(char *ipAddr, int len)
-{
-	BOOL ret = FALSE;
-
-	IP_ADAPTER_INFO *pAdapterInfo = (IP_ADAPTER_INFO *)new BYTE[sizeof(IP_ADAPTER_INFO)];
-	ULONG OutBufLen = 0;
-	DWORD res = GetAdaptersInfo(pAdapterInfo, &OutBufLen);
-	if (res == ERROR_BUFFER_OVERFLOW)
-	{
-		delete (pAdapterInfo);
-		pAdapterInfo = (IP_ADAPTER_INFO *)new BYTE[OutBufLen];
-		res = GetAdaptersInfo(pAdapterInfo, &OutBufLen);
-	}
-
-	if (res == NO_ERROR)
-	{
-		IP_ADAPTER_INFO *info = pAdapterInfo;
-		do
-		{
-			//RETAILMSG(1, (L"AdapterName = %s\r\n", info->AdapterName));
-			//if (strstr(info->AdapterName, "USB CABLE"))
-			if (strcmp(info->GatewayList.IpAddress.String,"0.0.0.0") != 0)
-			{
-				strncpy_s(ipAddr, len, info->IpAddressList.IpAddress.String, len);
-				ret = TRUE;
-				//break;
-			}
-
-			info = info->Next;
-		}
-		while (info);
-
-	}
-
-	delete (pAdapterInfo);
-	return ret;
-}
-
