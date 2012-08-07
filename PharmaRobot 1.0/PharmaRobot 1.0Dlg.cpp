@@ -17,8 +17,6 @@
 #define new DEBUG_NEW
 #endif
 
-void HandleTCPClient(CSocket& clntSock);  // TCP client handling function
-
 extern "C" {
 	//extern int CIOpenStd( char * pszClientName );
 
@@ -126,6 +124,8 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 {
 	char echoBuffer[sizeof(PRORBTPARAMS)]; // Buffer for echo string
 
+	PRORBTPARAMS * pProRoboParams = (PRORBTPARAMS *)echoBuffer;
+
 	// Initialize the AfxSocket
 	AfxSocketInit(NULL);
 
@@ -185,9 +185,15 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		}
 
 		CString st;
-		st.SetString((wchar_t*)echoBuffer);
+		if (pProRoboParams->Header[0] == '`')
+		{
+			st.SetString((wchar_t*)pProRoboParams->Barcode);
+		}
+		else
+		{
+			st.SetString(L"Bad Packet Content");
+		}
 		pdialog->m_listBoxMain.AddString(st);
-
 		clntSock.Close(); // Close client socket
 
 	}
