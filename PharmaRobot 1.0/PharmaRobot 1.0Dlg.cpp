@@ -172,6 +172,7 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		}
 
 		// Send received string and receive again until end of transmission
+		/*
 		while (recvMsgSize > 0) {
 			// Echo message back to client
 			if (clntSock.Send(echoBuffer, recvMsgSize, 0) != recvMsgSize) {
@@ -183,17 +184,27 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 				//  DieWithError("clntSock.Receive() more failed");
 			}
 		}
+		*/
 
 		CString st;
 		if (pProRoboParams->Header[0] == '`')
 		{
-			st.SetString((wchar_t*)pProRoboParams->Barcode);
+			st = "Received from Client Directive: "; st += pProRoboParams->Directive; pdialog->m_listBoxMain.AddString(st);
+			st = "Bracode: "; st += pProRoboParams->Barcode; pdialog->m_listBoxMain.AddString(st);
+			st = "Qty: "; st += pProRoboParams->Qty; pdialog->m_listBoxMain.AddString(st);
+			st = "SessionId: "; st += pProRoboParams->SessionId; pdialog->m_listBoxMain.AddString(st);
+			st = "LineNum: "; st += pProRoboParams->LineNum; pdialog->m_listBoxMain.AddString(st);
+			st = "TotalLines: "; st += pProRoboParams->TotalLines; pdialog->m_listBoxMain.AddString(st);
+
+			_TCHAR AckBuffer[8] = L"Ack OK\0";
+			// Echo message back to client
+			clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
+			st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
 		}
 		else
 		{
-			st.SetString(L"Bad Packet Content");
+			st.SetString(L"Bad Packet Content"); pdialog->m_listBoxMain.AddString(st);
 		}
-		pdialog->m_listBoxMain.AddString(st);
 		clntSock.Close(); // Close client socket
 
 	}
