@@ -196,7 +196,7 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 			st = "LineNum: "; st += pProRoboParams->LineNum; pdialog->m_listBoxMain.AddString(st);
 			st = "TotalLines: "; st += pProRoboParams->TotalLines; pdialog->m_listBoxMain.AddString(st);
 
-			_TCHAR AckBuffer[8] = L"Ack OK\0";
+			_TCHAR AckBuffer[100] = L"Ack OK\nAckTest1\nAckTest2\nAck OK\nAckTest1\nAckTest2\nAck OK\nAckTest1\nAckTest2\n\0";
 			// Echo message back to client
 			clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
 			st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
