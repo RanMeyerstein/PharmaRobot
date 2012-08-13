@@ -22,6 +22,10 @@ extern "C" {
 
 }
 
+HANDLE hSocketThread;
+
+extern DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog);
+
 // CAboutDlg dialog used for App About
 
 class CAboutDlg : public CDialogEx
@@ -113,106 +117,6 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTONGetSQLDesc, &CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc)
 END_MESSAGE_MAP()
 
-HANDLE hSocketThread;
-
-struct PRORBTPARAMS
-{
-	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2];
-};
-
-DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
-{
-	char echoBuffer[sizeof(PRORBTPARAMS)]; // Buffer for echo string
-
-	PRORBTPARAMS * pProRoboParams = (PRORBTPARAMS *)echoBuffer;
-
-	// Initialize the AfxSocket
-	AfxSocketInit(NULL);
-
-	int echoServPort = 50004;  // First arg: local port
-	CSocket servSock;                  // Socket descriptor for server
-
-	// Create the server socket
-	if (!servSock.Create(echoServPort)) {
-		//DieWithError("servSock.Create() failed");
-	}
-
-	// Mark the socket so it will listen for incoming connections
-	if (!servSock.Listen(5)) {
-		//DieWithError("servSock.Listen() failed");
-	}
-
-
-	for(;;) { // Run forever
-		CSocket clntSock;                // Socket descriptor for client
-		SOCKADDR_IN echoClntAddr;        // Client address
-		int clntLen;                     // Length of client address data structure 
-
-		// Get the size of the in-out parameter
-		clntLen = sizeof(echoClntAddr);
-
-		// Wait for a client to connect
-		if (!servSock.Accept(clntSock)) {
-			//DieWithError("servSock.Accept() failed");
-		}
-
-		// ClntSock is connected to a client!
-
-		// Get the client's host name
-		if (!clntSock.GetPeerName((SOCKADDR*)&echoClntAddr, &clntLen)) {
-			//DieWithError("clntSock.GetPeerName() failed");
-		}
-
-		int recvMsgSize;              // Size of received message
-
-		// Recieve message from client 
-		recvMsgSize = clntSock.Receive(echoBuffer, sizeof(PRORBTPARAMS), 0);
-		if (recvMsgSize < 0) {
-			// DieWithError("clntSock.Receive() failed");
-		}
-
-		// Send received string and receive again until end of transmission
-		/*
-		while (recvMsgSize > 0) {
-			// Echo message back to client
-			if (clntSock.Send(echoBuffer, recvMsgSize, 0) != recvMsgSize) {
-				//   DieWithError("clntSock.Send() sent a different number of bytes than received");
-			}
-			// See if there is more data to receive
-			recvMsgSize = clntSock.Receive(echoBuffer, sizeof(PRORBTPARAMS), 0);
-			if (recvMsgSize < 0) {
-				//  DieWithError("clntSock.Receive() more failed");
-			}
-		}
-		*/
-
-		CString st;
-		if (pProRoboParams->Header[0] == '`')
-		{
-			st = "Received from Client Directive: "; st += pProRoboParams->Directive; pdialog->m_listBoxMain.AddString(st);
-			st = "Bracode: "; st += pProRoboParams->Barcode; pdialog->m_listBoxMain.AddString(st);
-			st = "Qty: "; st += pProRoboParams->Qty; pdialog->m_listBoxMain.AddString(st);
-			st = "SessionId: "; st += pProRoboParams->SessionId; pdialog->m_listBoxMain.AddString(st);
-			st = "LineNum: "; st += pProRoboParams->LineNum; pdialog->m_listBoxMain.AddString(st);
-			st = "TotalLines: "; st += pProRoboParams->TotalLines; pdialog->m_listBoxMain.AddString(st);
-
-			_TCHAR AckBuffer[100] = L"Ack OK\nAckTest1\nAckTest2\nAck OK\nAckTest1\nAckTest2\nAck OK\nAckTest1\nAckTest2\n\0";
-			// Echo message back to client
-			clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
-			st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
-		}
-		else
-		{
-			st.SetString(L"Bad Packet Content"); pdialog->m_listBoxMain.AddString(st);
-		}
-		clntSock.Close(); // Close client socket
-
-	}
-
-  // NOT REACHED
-
-  return 0;
-}
 // CPharmaRobot10Dlg message handlers
 
 BOOL CPharmaRobot10Dlg::OnInitDialog()
@@ -564,6 +468,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_EditOrderNum.ShowWindow(SW_SHOW);
 		m_ButtonStock.ShowWindow(SW_SHOW);
 		m_ButtonDispense.ShowWindow(SW_SHOW);
+		m_ButtonConnect.ShowWindow(SW_SHOW);
 
 		m_Static1.ShowWindow(SW_SHOW);
 		m_Static2.ShowWindow(SW_SHOW);
@@ -594,6 +499,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_EditOrderNum.ShowWindow(SW_HIDE);
 		m_ButtonStock.ShowWindow(SW_HIDE);
 		m_ButtonDispense.ShowWindow(SW_HIDE);
+		m_ButtonConnect.ShowWindow(SW_HIDE);
 
 		m_Static1.ShowWindow(SW_HIDE);
 		m_Static2.ShowWindow(SW_HIDE);

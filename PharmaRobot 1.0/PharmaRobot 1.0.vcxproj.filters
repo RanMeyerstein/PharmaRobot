@@ -56,6 +56,9 @@
     <ClCompile Include="CnosisComm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ListenerSocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PharmaRobot 1.0.rc">

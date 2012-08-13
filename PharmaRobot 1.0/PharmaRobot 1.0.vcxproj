@@ -110,6 +110,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CnosisComm.cpp" />
+    <ClCompile Include="ListenerSocket.cpp" />
     <ClCompile Include="PharmaRobot 1.0.cpp" />
     <ClCompile Include="PharmaRobot 1.0Dlg.cpp" />
     <ClCompile Include="stdafx.cpp">
