@@ -1,4 +1,4 @@
-
+﻿
 #include "stdafx.h"
 #include "PharmaRobot 1.0.h"
 #include "PharmaRobot 1.0Dlg.h"
@@ -7,15 +7,68 @@
 #include <iostream>
 #include "Iphlpapi.h"
 
+_TCHAR AckBuffer[100];
+
+typedef enum QUERYRESPONSE
+{
+	Q_ERROR = 0,
+	Q_NOACK,
+	Q_SENDACK
+};
 
 struct PRORBTPARAMS
 {
-	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2];
+	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[2];
 };
 
+QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg* pdialog)
+{
+#if 0
+	int fieldLength;
+	wchar_t wcstring[100];
+	WCHAR orig[14];
+	char nstring[100];
+
+	{
+		memset(pdialog->ConsisMessage, '0', 41);
+		pdialog->ConsisMessage[41] = '\0';
+
+		size_t convertedChars = 0;
+
+		/*Counter Unit*/
+		size_t origsize = wcslen(pProRbtParams->
+		//fieldLength = m_EditCounterUnitB.GetWindowTextLengthW();
+		//m_EditCounterUnitB.GetWindowTextW(orig,origsize);
+		wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+		int location = 4 - m_EditCounterUnitB.GetWindowTextLengthW();
+
+		memcpy(&(ConsisMessage[location]), nstring, origsize - 1);
+
+		/*Barcode*/
+		origsize = m_EditBarCodeB.GetWindowTextLengthW() + 1;
+		m_EditBarCodeB.GetWindowTextW(orig,origsize);
+		wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
+		location = 41 - m_EditBarCodeB.GetWindowTextLengthW();
+
+		memcpy((void*)&(ConsisMessage[location]), (void*) nstring, origsize - 1);
+
+		ConsisMessage[0] = 'B';
+
+		mbstowcs_s(&convertedChars, wcstring, 42, ConsisMessage, _TRUNCATE);
+
+		m_listBoxMain.AddString(wcstring);
+
+		Consis.SendStockQuery(ConsisMessage);
+	}
+#endif
+	wsprintf(AckBuffer,L"  הארון מכיל כמות מסוימת של פריטים בעלי ברקוד %s \0", pProRbtParams->Barcode);
+	return Q_SENDACK;
+
+}
 
 DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 {
+	QUERYRESPONSE res;
 	char echoBuffer[sizeof(PRORBTPARAMS)]; // Buffer for echo string
 
 	PRORBTPARAMS * pProRoboParams = (PRORBTPARAMS *)echoBuffer;
@@ -73,6 +126,7 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		if (pProRoboParams->Header[0] == '`')
 		{
 			st = "Received from Client: "; st += clientaddress; pdialog->m_listBoxMain.AddString(st);
+			st = "Counter Unit ID: "; st +=  pProRoboParams->CounterUnit; pdialog->m_listBoxMain.AddString(st);
 			st = "Directive: "; st += pProRoboParams->Directive; pdialog->m_listBoxMain.AddString(st);
 			st = "Bracode: "; st += pProRoboParams->Barcode; pdialog->m_listBoxMain.AddString(st);
 			st = "Qty: "; st += pProRoboParams->Qty; pdialog->m_listBoxMain.AddString(st);
@@ -80,10 +134,33 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 			st = "LineNum: "; st += pProRoboParams->LineNum; pdialog->m_listBoxMain.AddString(st);
 			st = "TotalLines: "; st += pProRoboParams->TotalLines; pdialog->m_listBoxMain.AddString(st);
 
-			_TCHAR AckBuffer[100] = L"Ack OK\nAckTest1\nAckTest2\nAck OK\nAckTest1\nAckTest2\nAck OK\nAckTest1\nAckTest2\n\0";
-			// Echo message back to client
-			clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
-			st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
+			if (pProRoboParams->Directive[0] == L'1')
+			{
+				res = HandleQueryCommand(pProRoboParams, pdialog);
+			}
+			else if (pProRoboParams->Directive[0] == L'0')
+			{
+
+			}
+			switch (res)
+			{
+			case Q_ERROR:
+				// Echo message back to client
+				wsprintf(AckBuffer,L"נכשלה השליחה לשרת קונסיס \0");
+				clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
+				st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
+				break;
+
+			case Q_NOACK:
+				break;
+
+			case Q_SENDACK:
+				// Echo message back to client
+				clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
+				st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
+				break ;
+			}
+
 		}
 		else
 		{

@@ -24,6 +24,7 @@ public:
 	CListBox m_listBoxMain;
 	CSocket  sockSrvr;
 	CSocket  sockRecv;
+	char     ConsisMessage[512];
 // Dialog Data
 	enum { IDD = IDD_PHARMAROBOT10_DIALOG };
 
@@ -73,7 +74,7 @@ protected:
 	CButton  m_ButtonGetSQLDesc;
 	CStatic  m_StaticBarcodeSQL;
 
-	char     ConsisMessage[512];
+
 	int      m_OrderNum;
 
 	void     CloseEverything();

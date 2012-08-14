@@ -526,7 +526,7 @@ void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 {
 	wchar_t StringSQL[100];
 
-	m_YarpaDb.OpenEx( _T( "ODBC;DSN=PT;SERVER=192.168.10.5;DATABASE=PIRYON;UID=sa;PWD=1234;TABLE=Xitems"),
+	m_YarpaDb.OpenEx( _T( "ODBC;DSN=PT;SERVER=192.168.1.5;DATABASE=PIRYON;UID=sa;PWD=1234;TABLE=Xitems"),
 		CDatabase::openReadOnly |
 		CDatabase::noOdbcDialog);
 
