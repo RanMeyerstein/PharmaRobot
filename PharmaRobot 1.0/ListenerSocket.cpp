@@ -18,17 +18,17 @@ typedef enum QUERYRESPONSE
 
 struct PRORBTPARAMS
 {
-	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[2];
+	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[4];
 };
 
 QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg* pdialog)
 {
-#if 0
-	int fieldLength;
-	wchar_t wcstring[100];
-	WCHAR orig[14];
-	char nstring[100];
+	if (pdialog->Consis.ConnectionStarted == FALSE)
+	{
+		pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain));
+	}
 
+	if (pdialog->Consis.ConnectionStarted == TRUE)
 	{
 		memset(pdialog->ConsisMessage, '0', 41);
 		pdialog->ConsisMessage[41] = '\0';
@@ -36,34 +36,33 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		size_t convertedChars = 0;
 
 		/*Counter Unit*/
-		size_t origsize = wcslen(pProRbtParams->
-		//fieldLength = m_EditCounterUnitB.GetWindowTextLengthW();
-		//m_EditCounterUnitB.GetWindowTextW(orig,origsize);
-		wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
-		int location = 4 - m_EditCounterUnitB.GetWindowTextLengthW();
-
-		memcpy(&(ConsisMessage[location]), nstring, origsize - 1);
+		CString CounterUnitString = pProRbtParams->CounterUnit;
+		size_t len = CounterUnitString.GetLength();
+		int location = 4 - len;
+		wchar_t Source[4];
+		wsprintf(Source, CounterUnitString.GetString());
+		wcstombs(&(pdialog->ConsisMessage[location]), Source, len);
 
 		/*Barcode*/
-		origsize = m_EditBarCodeB.GetWindowTextLengthW() + 1;
-		m_EditBarCodeB.GetWindowTextW(orig,origsize);
-		wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
-		location = 41 - m_EditBarCodeB.GetWindowTextLengthW();
+		CString BarCodeString = pProRbtParams->Barcode;
+		len = BarCodeString.GetLength();
+		location = 41 - len;
+		wchar_t barcode[14];
+		wsprintf(barcode, BarCodeString.GetString());
+		wcstombs(&(pdialog->ConsisMessage[location]), barcode, len);
 
-		memcpy((void*)&(ConsisMessage[location]), (void*) nstring, origsize - 1);
+		pdialog->ConsisMessage[0] = 'B';
 
-		ConsisMessage[0] = 'B';
-
-		mbstowcs_s(&convertedChars, wcstring, 42, ConsisMessage, _TRUNCATE);
-
-		m_listBoxMain.AddString(wcstring);
-
-		Consis.SendStockQuery(ConsisMessage);
+		pdialog->Consis.SendStockQuery(pdialog->ConsisMessage);
+		
+		wsprintf(AckBuffer,L"  הארון מכיל כמות מסוימת של פריטים בעלי ברקוד %s \0", pProRbtParams->Barcode);
+		return Q_SENDACK;
 	}
-#endif
-	wsprintf(AckBuffer,L"  הארון מכיל כמות מסוימת של פריטים בעלי ברקוד %s \0", pProRbtParams->Barcode);
-	return Q_SENDACK;
-
+	else
+	{
+		wsprintf(AckBuffer,L" שרת קונסיס לא פעיל\0");
+		return Q_SENDACK;
+	}
 }
 
 DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)

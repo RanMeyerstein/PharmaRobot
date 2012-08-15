@@ -83,7 +83,6 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
 
 		if ((hinstLibCD != NULL) || (hinstLibCD != NULL) )
 		{
-			ConnectionStarted = TRUE;
 			ptCIGetLastSystemError = (CIGetLastSystemError)GetProcAddress(hinstLibCD, "CIGetLastSystemError"); 
 			ptCIGetSocket = (CIGetSocket)GetProcAddress(hinstLibCD, "CIGetSocket");
 			ptCIOpen =  (CIOpen)GetProcAddress(hinstLibCD, "CIOpen");
@@ -145,8 +144,10 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
 	//			return 0;
 			}
 			else
+			{
+				ConnectionStarted = TRUE;
 				dlglistBox->AddString(L"sent succesful\n");//,message);
-			
+			}
 			/*
 			* get the r-result message
 			*/

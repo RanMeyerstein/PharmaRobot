@@ -24,6 +24,7 @@ public:
 	CListBox m_listBoxMain;
 	CSocket  sockSrvr;
 	CSocket  sockRecv;
+	ConsisComm Consis;
 	char     ConsisMessage[512];
 // Dialog Data
 	enum { IDD = IDD_PHARMAROBOT10_DIALOG };
@@ -36,7 +37,6 @@ public:
 protected:
 	HICON m_hIcon;
 	NOTIFYICONDATA nidApp;
-	ConsisComm Consis;
 	CDatabase m_YarpaDb;
 
 	// Generated message map functions
