@@ -284,12 +284,8 @@ void CPharmaRobot10Dlg::OnBnClickedCancel()
 	CDialogEx::OnCancel();
 }
 
-
-void CPharmaRobot10Dlg::OnBnClickedButton1()
+void CPharmaRobot10Dlg::EnableCondsisTab()
 {
-	m_listBoxMain.AddString(L"Button Pressed");
-	if (Consis.ConnectToConsis("ShorT", &m_listBoxMain))
-	{
 		m_EditCounterUnitB.EnableWindow();
 		m_EditBarCodeB.EnableWindow();
 		m_ButtonStock.EnableWindow();
@@ -300,6 +296,14 @@ void CPharmaRobot10Dlg::OnBnClickedButton1()
 		m_EditQuantity.EnableWindow();
 		m_ButtonDispense.EnableWindow();
 		m_ButtonConnect.EnableWindow(FALSE);
+}
+
+void CPharmaRobot10Dlg::OnBnClickedButton1()
+{
+	//m_listBoxMain.AddString(L"Button Pressed");
+	if (Consis.ConnectToConsis("ShorT", &m_listBoxMain))
+	{
+		EnableCondsisTab();
 	}
 }
 

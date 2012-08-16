@@ -33,6 +33,7 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
 
+
 // Implementation
 protected:
 	HICON m_hIcon;
@@ -87,5 +88,7 @@ public:
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnBnClickedButtongetsqldesc();
+
+	void EnableCondsisTab();
 };
 

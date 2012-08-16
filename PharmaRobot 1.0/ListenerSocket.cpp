@@ -9,6 +9,83 @@
 
 _TCHAR AckBuffer[100];
 
+__declspec(align(8)) 
+
+/************** A type Start ***********/
+struct AConsisReplyHeader{
+
+	char RecordType;
+	char OrderNumber[8];
+	char DemandingCounterUnitId[3];
+	char DispenserStation[3];
+	char Priority;
+	char NumberOfArticles[2];
+};
+
+struct AConsisReplyDispensedOcc{
+
+	char PZN[7];
+	char DispensedQuantity[5];
+	char Flag;
+	char ArticleId[30];
+};
+/************** A type End ***********/
+
+/************** a type Start ***********/
+struct aConsisReplyHeader{
+
+	char RecordType;
+	char OrderNumber[8];
+	char DemandingCounterUnitId[3];
+	char DispenserStation[3];
+	char OrderState[2];
+	char NumberOfArticles[2];
+};
+
+struct aConsisReplyDispensedOcc{
+
+	char PZN[7];
+	char DispensedQuantity[5];
+	char ArticleId[30];
+};
+/************** a type End ***********/
+
+
+/************** B type Start ***********/
+struct BConsisStockRequest{
+
+	char RecordType;
+	char DemandingCounterUnitId[3];
+	char PZN[7];
+	char ArticleId[30];
+};
+/************** B type End ***********/
+
+/************** b type Start ***********/
+struct bConsisReplyHeader{
+
+	char RecordType;
+	char DemandingCounterUnitId[3];
+	char PZN[7];
+	char TotalQuantity[5];
+	char NumStockLocations[2];
+	char ArticleId[30];
+};
+
+struct bConsisReplyStockLocations{
+
+	char StockLocation[10];
+	char Capacity[5];
+	char PartialStockAtLocation[5];
+	char Expirydate[6];
+};
+
+struct bConsisReplyFooter{
+
+	char ArticleId[30];
+};
+/************** b type End ***********/
+
 typedef enum QUERYRESPONSE
 {
 	Q_ERROR = 0,
@@ -25,7 +102,8 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 {
 	if (pdialog->Consis.ConnectionStarted == FALSE)
 	{
-		pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain));
+		if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain)))
+			pdialog->EnableCondsisTab();
 	}
 
 	if (pdialog->Consis.ConnectionStarted == TRUE)
@@ -54,16 +132,64 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		pdialog->ConsisMessage[0] = 'B';
 
 		pdialog->Consis.SendStockQuery(pdialog->ConsisMessage);
-		
-		wsprintf(AckBuffer,L"  הארון מכיל כמות מסוימת של פריטים בעלי ברקוד %s \0", pProRbtParams->Barcode);
+
+		BOOL result = pdialog->Consis.SendMessage(pdialog->ConsisMessage, sizeof(pdialog->ConsisMessage));
+
+		if (result == TRUE)
+		{
+			result = pdialog->Consis.ReceiveMessage(pdialog->ConsisMessage, sizeof(pdialog->ConsisMessage));
+			if (result == TRUE)
+			{
+				bConsisReplyHeader *pHeader = (bConsisReplyHeader *)pdialog->ConsisMessage;
+
+				//Extract number of locations
+				char numloc[4];
+				memcpy(numloc, pHeader->NumStockLocations, sizeof(pHeader->NumStockLocations));
+				numloc[3] = '\0';
+				int numLocation =  atoi(numloc);
+
+				//Extract Total Article ID
+				wchar_t articleID[31];
+				articleID[30] = '\0';
+				size_t retsize;
+				mbstowcs_s(&retsize, articleID, sizeof(pHeader->ArticleId), pHeader->ArticleId, _TRUNCATE);
+
+				//Extract Total Quantity of Item
+				char TotalQua[6];
+				TotalQua[5] = '\0';
+				memcpy(TotalQua, pHeader->TotalQuantity, sizeof(pHeader->TotalQuantity));
+				int totalQuantity =  atoi(TotalQua);
+
+				//Find Article ID which is in 'b' Footer after article locations
+				char* address = (char*)pHeader + sizeof(bConsisReplyHeader) + (numLocation * (sizeof(bConsisReplyStockLocations) - 1));
+				bConsisReplyFooter* bfooter = (bConsisReplyFooter*)address;
+
+				articleID[30] = '\0';
+
+				memcpy(articleID, bfooter->ArticleId, sizeof(bfooter->ArticleId));
+
+				//Fill Ack message content
+				if (totalQuantity)
+				{
+					wsprintf(AckBuffer,L"Number of articles found:%d with Barcode: %s", totalQuantity, articleID);
+				}
+				else
+				{
+					wsprintf(AckBuffer,L"No items of Barcode: %s", articleID);
+				}
+
+				return Q_SENDACK;
+			}
+		}
+
+		wsprintf(AckBuffer,L" שרת קונסיס לא פעיל 2\0");
 		return Q_SENDACK;
 	}
-	else
-	{
-		wsprintf(AckBuffer,L" שרת קונסיס לא פעיל\0");
-		return Q_SENDACK;
-	}
+
+	wsprintf(AckBuffer,L" שרת קונסיס לא זמין\0");
+	return Q_SENDACK;
 }
+
 
 DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 {

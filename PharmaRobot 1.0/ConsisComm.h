@@ -12,9 +12,12 @@ public:
 	~ ConsisComm();
 
 	bool ConnectionStarted;
+	bool DllsLoaded;
 	int ConnectToConsis(char* clientName, CListBox * dlglistBox); 
 	int SendStockQuery(char* MessageContent);
 	int SendDispnseCommand(char* MessageContent);
+	BOOL SendMessage(char* MessageContent, size_t BufferSize);	
+	BOOL ReceiveMessage(char* ReceiveBuffer, size_t BufferSize);
 
 private:
 
