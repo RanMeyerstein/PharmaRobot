@@ -39,6 +39,7 @@ protected:
 	HICON m_hIcon;
 	NOTIFYICONDATA nidApp;
 	CDatabase m_YarpaDb;
+	bool ConnectedToYarpaSQL;
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -74,6 +75,7 @@ protected:
 	CEdit    m_EditBarcodeSQL;
 	CButton  m_ButtonGetSQLDesc;
 	CStatic  m_StaticBarcodeSQL;
+	CEdit    m_EditDsnSQL;
 
 
 	int      m_OrderNum;
@@ -90,5 +92,10 @@ public:
 	afx_msg void OnBnClickedButtongetsqldesc();
 
 	void EnableCondsisTab();
+	BOOL GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDescription);
+	BOOL InitiateYarpaSQL();
+
+	//Mutex for access to CONSIS
+	CMutex m_Mutex;
 };
 

@@ -16,8 +16,8 @@ public:
 	int ConnectToConsis(char* clientName, CListBox * dlglistBox); 
 	int SendStockQuery(char* MessageContent);
 	int SendDispnseCommand(char* MessageContent);
-	BOOL SendMessage(char* MessageContent, size_t BufferSize);	
-	BOOL ReceiveMessage(char* ReceiveBuffer, size_t BufferSize);
+	BOOL SendConsisMessage(char* MessageContent, size_t BufferSize);	
+	BOOL ReceiveConsisMessage(char* ReceiveBuffer, int * messageLength);
 
 private:
 

@@ -69,7 +69,6 @@ struct bConsisReplyHeader{
 	char PZN[7];
 	char TotalQuantity[5];
 	char NumStockLocations[2];
-	char ArticleId[30];
 };
 
 struct bConsisReplyStockLocations{
@@ -100,6 +99,12 @@ struct PRORBTPARAMS
 
 QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg* pdialog)
 {
+	//Protect with Mutex the CONSIS resource
+	CSingleLock singleLock(&(pdialog->m_Mutex));
+
+	// Attempt to lock the shared resource
+	if (singleLock.Lock(INFINITE))    // Wait 100 ms...
+
 	if (pdialog->Consis.ConnectionStarted == FALSE)
 	{
 		if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain)))
@@ -107,11 +112,9 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 	}
 
 	if (pdialog->Consis.ConnectionStarted == TRUE)
-	{
+	{//Build B Message with Barcode from RBT parameters
 		memset(pdialog->ConsisMessage, '0', 41);
 		pdialog->ConsisMessage[41] = '\0';
-
-		size_t convertedChars = 0;
 
 		/*Counter Unit*/
 		CString CounterUnitString = pProRbtParams->CounterUnit;
@@ -129,67 +132,82 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		wsprintf(barcode, BarCodeString.GetString());
 		wcstombs(&(pdialog->ConsisMessage[location]), barcode, len);
 
+
 		pdialog->ConsisMessage[0] = 'B';
 
-		pdialog->Consis.SendStockQuery(pdialog->ConsisMessage);
+		/* Send B message to CONSIS */
+		pdialog->Consis.SendConsisMessage(pdialog->ConsisMessage, 42);
 
-		BOOL result = pdialog->Consis.SendMessage(pdialog->ConsisMessage, sizeof(pdialog->ConsisMessage));
+		char buffer[1024];
+		int MessageLength = sizeof(buffer);
+		pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength);
 
-		if (result == TRUE)
+		buffer[MessageLength] = '\0';
+
+		bConsisReplyHeader *pHeader = (bConsisReplyHeader *)buffer;
+
+		//Extract number of locations
+		char numloc[3];
+		memcpy(numloc, pHeader->NumStockLocations, sizeof(pHeader->NumStockLocations));
+		numloc[2] = '\0';
+		int numLocation =  atoi(numloc);
+
+		//Extract Total Quantity of Item
+		char TotalQua[6];
+		TotalQua[5] = '\0';
+		memcpy(TotalQua, pHeader->TotalQuantity, sizeof(pHeader->TotalQuantity));
+		int totalQuantity =  atoi(TotalQua);
+
+		//Find Article ID which is in 'b' Footer after article locations
+		char* address = (char*)pHeader + sizeof(bConsisReplyHeader) + (numLocation * (sizeof(bConsisReplyStockLocations) - 1));
+		bConsisReplyFooter* bfooter = (bConsisReplyFooter*)address;
+
+		//Extract Article ID
+		wchar_t articleID[31];
+		articleID[30] = '\0';
+		size_t retsize;
+		mbstowcs_s(&retsize, articleID, sizeof(bfooter->ArticleId) + 1, bfooter->ArticleId, _TRUNCATE);
+
+		//Clean leading zeroes
+		CString cleanArticleID;
+		cleanArticleID.SetString(articleID);
+		cleanArticleID.TrimLeft(L'0');
+		wsprintf(articleID,cleanArticleID.GetString());
+
+		wchar_t description[256];
+
+		//Get Description from Yarpa SQL
+		if (pdialog->GetItemDescFromBarcode(articleID, description))
 		{
-			result = pdialog->Consis.ReceiveMessage(pdialog->ConsisMessage, sizeof(pdialog->ConsisMessage));
-			if (result == TRUE)
+			if (totalQuantity)
 			{
-				bConsisReplyHeader *pHeader = (bConsisReplyHeader *)pdialog->ConsisMessage;
-
-				//Extract number of locations
-				char numloc[4];
-				memcpy(numloc, pHeader->NumStockLocations, sizeof(pHeader->NumStockLocations));
-				numloc[3] = '\0';
-				int numLocation =  atoi(numloc);
-
-				//Extract Total Article ID
-				wchar_t articleID[31];
-				articleID[30] = '\0';
-				size_t retsize;
-				mbstowcs_s(&retsize, articleID, sizeof(pHeader->ArticleId), pHeader->ArticleId, _TRUNCATE);
-
-				//Extract Total Quantity of Item
-				char TotalQua[6];
-				TotalQua[5] = '\0';
-				memcpy(TotalQua, pHeader->TotalQuantity, sizeof(pHeader->TotalQuantity));
-				int totalQuantity =  atoi(TotalQua);
-
-				//Find Article ID which is in 'b' Footer after article locations
-				char* address = (char*)pHeader + sizeof(bConsisReplyHeader) + (numLocation * (sizeof(bConsisReplyStockLocations) - 1));
-				bConsisReplyFooter* bfooter = (bConsisReplyFooter*)address;
-
-				articleID[30] = '\0';
-
-				memcpy(articleID, bfooter->ArticleId, sizeof(bfooter->ArticleId));
-
-				//Fill Ack message content
-				if (totalQuantity)
-				{
-					wsprintf(AckBuffer,L"Number of articles found:%d with Barcode: %s", totalQuantity, articleID);
-				}
-				else
-				{
-					wsprintf(AckBuffer,L"No items of Barcode: %s", articleID);
-				}
-
-				return Q_SENDACK;
+				wsprintf(AckBuffer,L"Article: %s\nQuantity: %d", description, totalQuantity);
+			}
+			else
+			{
+				wsprintf(AckBuffer,L"No items of Article: %s", description);
+			}
+		}
+		else
+		{
+			//Fill Ack message content
+			if (totalQuantity)
+			{
+				wsprintf(AckBuffer,L"Number of articles found:%d with Barcode: %s", totalQuantity, cleanArticleID.GetString());
+			}
+			else
+			{
+				wsprintf(AckBuffer,L"No items of Barcode: %s", cleanArticleID.GetString());
 			}
 		}
 
-		wsprintf(AckBuffer,L" שרת קונסיס לא פעיל 2\0");
+		singleLock.Unlock();
 		return Q_SENDACK;
 	}
-
 	wsprintf(AckBuffer,L" שרת קונסיס לא זמין\0");
+	singleLock.Unlock();
 	return Q_SENDACK;
 }
-
 
 DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 {
@@ -236,7 +254,7 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		}
 		char clientaddress[10];
 
-		_ultoa_s(echoClntAddr.sin_addr.S_un.S_addr,clientaddress,10);
+		//_ultoa_s(echoClntAddr.sin_addr.S_un.S_addr,clientaddress,10);
 
 
 		int recvMsgSize;              // Size of received message

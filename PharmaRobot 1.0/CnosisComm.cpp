@@ -175,22 +175,22 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
 
 
 
-BOOL ConsisComm::SendMessage(char* MessageContent, size_t BufferSize)
+BOOL ConsisComm::SendConsisMessage(char* MessageContent, size_t BufferSize)
 {
-	if 	(ptCISendMessg( MessageContent, BufferSize,3000) != 0)
-		return FALSE;
+	if 	(ptCISendMessg( MessageContent, BufferSize,3000) == 0)
+		return TRUE;
 
-	return TRUE;
+	return FALSE;
 }
 
-BOOL ConsisComm::ReceiveMessage(char* ReceiveBuffer, size_t BufferSize)
+BOOL ConsisComm::ReceiveConsisMessage(char* ReceiveBuffer, int * messageLength)
 {
-	int message_len = BufferSize;
-	char pending;
-
-	if 	(ptCIRecvMessgNB( ReceiveBuffer, &message_len, &pending, 1000) != 0)
+	char pending = 1;
+	while (pending)
+	{
+		if (ptCIRecvMessgNB( ReceiveBuffer, messageLength, &pending, 1000) != 0)
 		return FALSE;
-
+	}
 	return TRUE;
 }
 

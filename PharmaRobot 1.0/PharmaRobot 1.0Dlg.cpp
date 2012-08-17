@@ -101,6 +101,7 @@ void CPharmaRobot10Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_LISTSQLDesc, m_ListSQLDesc);
 	DDX_Control(pDX, IDC_STATICBarcodeSQL, m_StaticBarcodeSQL);
 	DDX_Control(pDX, IDC_EDITBarcodeSQL, m_EditBarcodeSQL);
+	DDX_Control(pDX, IDC_EDITDSN, m_EditDsnSQL);
 
 }
 
@@ -167,7 +168,10 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	m_EditDispenser.SetWindowTextW(L"1");
 	m_EditPriority.SetWindowTextW(L"3");
 	m_EditQuantity.SetWindowTextW(L"1");
-	m_EditBarcodeSQL.SetWindowTextW(L"7290004239988");
+	//m_EditBarcodeSQL.SetWindowTextW(L"7290004239988");
+	m_EditBarcodeSQL.SetWindowTextW(L"1234567890123");
+	m_EditDsnSQL.SetWindowTextW(L"DRIVER=SQL Server;SERVER=192.168.1.5;UID=sa;PWD=B1Admin;DATABASE=PIRYON;TABLE=Xitems");
+	m_EditDsnSQL.ShowWindow(SW_HIDE);
 	WCHAR strQuan[10];
 	wsprintf(strQuan,L"%d",m_OrderNum);
 	m_EditOrderNum.SetWindowTextW(strQuan);
@@ -185,6 +189,8 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 
 	hSocketThread = INVALID_HANDLE_VALUE;
 	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SocketThread, this, 0, NULL);
+
+	ConnectedToYarpaSQL = FALSE;
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -267,6 +273,10 @@ void CPharmaRobot10Dlg::CloseEverything()
 		hSocketThread = INVALID_HANDLE_VALUE;
 	}
 
+	if (ConnectedToYarpaSQL == TRUE)
+	{
+		m_YarpaDb.Close();
+	}
 
 	Shell_NotifyIcon(NIM_DELETE,&nidApp);
 }
@@ -489,6 +499,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_EditBarcodeSQL.ShowWindow(SW_HIDE);
 		m_ButtonGetSQLDesc.ShowWindow(SW_HIDE);
 		m_StaticBarcodeSQL.ShowWindow(SW_HIDE);
+		m_EditDsnSQL.ShowWindow(SW_HIDE);
 	}
 
 	else
@@ -520,19 +531,71 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_EditBarcodeSQL.ShowWindow(SW_SHOW);
 		m_ButtonGetSQLDesc.ShowWindow(SW_SHOW);
 		m_StaticBarcodeSQL.ShowWindow(SW_SHOW);
+		m_EditDsnSQL.ShowWindow(SW_SHOW);
 
 	}
 	*pResult = 0;
 }
 
+BOOL CPharmaRobot10Dlg::GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDescription)
+{
+	wchar_t command[200];
+
+	if (ConnectedToYarpaSQL== FALSE)
+	{
+		if (!InitiateYarpaSQL())
+			return FALSE;
+	}
+
+	CRecordset rs(&m_YarpaDb);
+	wsprintf(command,L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s'",pBarcode);
+	if (rs.Open(CRecordset::snapshot,command,CRecordset::readOnly))
+	{
+		// Create a CDBVariant object to
+		// store field data
+		CDBVariant varValue;
+		rs.GetFieldValue(1, varValue);
+		wsprintf(pDescription, varValue.m_pstringW->GetString());
+		rs.Close();
+		return TRUE;
+	}
+	else
+	{
+		m_listBoxMain.AddString(L"Failed to read Barcode from SQL");
+		return FALSE;
+	}
+}
+
+BOOL CPharmaRobot10Dlg::InitiateYarpaSQL()
+{
+	BOOL returnedvalue = TRUE;
+	wchar_t StringSQL[200];
+	wchar_t  st[100];
+	if (ConnectedToYarpaSQL== FALSE)
+	{
+		m_EditDsnSQL.GetWindowTextW(StringSQL,m_EditDsnSQL.GetWindowTextLengthW() + 1);
+
+		if(!m_YarpaDb.OpenEx(StringSQL,NULL))
+			returnedvalue= FALSE;
+
+		wsprintf(st,L"Connected to YARPA SQL Data base");
+		m_listBoxMain.AddString(st);
+
+		ConnectedToYarpaSQL = TRUE;
+	}
+	return returnedvalue;
+}
 
 void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 {
-	wchar_t StringSQL[100];
+	wchar_t StringSQL[200];
+	wchar_t  st[100];
 
-	m_YarpaDb.OpenEx( _T( "ODBC;DSN=PT;SERVER=192.168.1.5;DATABASE=PIRYON;UID=sa;PWD=1234;TABLE=Xitems"),
-		CDatabase::openReadOnly |
-		CDatabase::noOdbcDialog);
+	if (ConnectedToYarpaSQL== FALSE)
+	{
+		if (!InitiateYarpaSQL())
+			return;
+	}
 
 	if(m_EditBarcodeSQL.GetWindowTextLengthW() > 13)
 	{
@@ -542,41 +605,17 @@ void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 
 	m_EditBarcodeSQL.GetWindowTextW(StringSQL,m_EditBarcodeSQL.GetWindowTextLengthW() + 1);
 
+	if (GetItemDescFromBarcode(StringSQL, st))
+	{
+		m_ListSQLDesc.AddString(st);
+	}
 #ifdef __DEBUGPHARMA
-	wchar_t  st[100];
+
+	m_listBoxMain.AddString(StringSQL);
 	wsprintf(st,L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s';ORDER BY BARCODE;\0",StringSQL);
 	m_listBoxMain.AddString(st);
 #endif
 
-	CRecordset rs(&m_YarpaDb);
-	if (rs.Open(CRecordset::snapshot,StringSQL,CRecordset::readOnly))
-	{
-		// Create a CDBVariant object to
-		// store field data
-		CDBVariant varValue;
-		// Loop through the recordset,
-		// using GetFieldValue and
-		// GetODBCFieldCount to retrieve
-		// data in all columns
-		short nFields = rs.GetODBCFieldCount();
-		while(!rs.IsEOF())
-		{
-			for(short index = 0; index < nFields; index++)
-			{
-				rs.GetFieldValue(index, varValue);
-				m_ListSQLDesc.AddString(varValue.m_pstringW->GetString());
-			}
-			rs.MoveNext();
-		}
-
-		rs.Close();
-	}
-	else
-	{
-		m_listBoxMain.AddString(L"Failed to read Barcode from SQL");
-	}
-
-	m_YarpaDb.Close();
 }
 
 void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
