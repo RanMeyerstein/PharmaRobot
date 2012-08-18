@@ -51,10 +51,7 @@ protected:
 	CEdit    m_EditBarCodeB;
 	CEdit    m_EditCounterUnitA;
 	CEdit    m_EditBarCodeA;
-	CEdit    m_EditDispenser;
-	CEdit    m_EditPriority;
 	CEdit    m_EditQuantity;
-	CEdit    m_EditOrderNum;
 	CButton  m_ButtonConnect;
 	CButton  m_ButtonStock;
 	CButton  m_ButtonDispense;
@@ -77,9 +74,6 @@ protected:
 	CStatic  m_StaticBarcodeSQL;
 	CEdit    m_EditDsnSQL;
 
-
-	int      m_OrderNum;
-
 	void     CloseEverything();
 
 public:
@@ -94,7 +88,11 @@ public:
 	void EnableCondsisTab();
 	BOOL GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDescription);
 	BOOL InitiateYarpaSQL();
+	CEdit    m_EditOrderNum; //Parameters taken From GUI for 'A' command
+	CEdit    m_EditPriority; //Parameters taken From GUI for 'A' command
+	CEdit    m_EditDispenser;//Parameters taken From GUI for 'A' command
 
+	int      m_OrderNum;
 	//Mutex for access to CONSIS
 	CMutex m_Mutex;
 };

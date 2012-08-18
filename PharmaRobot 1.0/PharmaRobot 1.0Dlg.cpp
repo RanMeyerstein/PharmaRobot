@@ -547,6 +547,8 @@ BOOL CPharmaRobot10Dlg::GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDes
 			return FALSE;
 	}
 
+	memset(&(pBarcode[13]),'\0',1);
+
 	CRecordset rs(&m_YarpaDb);
 	wsprintf(command,L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s'",pBarcode);
 	if (rs.Open(CRecordset::snapshot,command,CRecordset::readOnly))
