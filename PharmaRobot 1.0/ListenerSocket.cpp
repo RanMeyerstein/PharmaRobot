@@ -6,6 +6,7 @@
 #include <afxsock.h>    // For CSocket 
 #include <iostream>
 #include "Iphlpapi.h"
+#include "ProRBT.h"
 
 _TCHAR AckBuffer[100];
 
@@ -92,10 +93,6 @@ typedef enum QUERYRESPONSE
 	Q_SENDACK
 };
 
-struct PRORBTPARAMS
-{
-	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[4];
-};
 
 QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg* pdialog)
 {
@@ -258,7 +255,10 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 	CSingleLock singleLock(&(pdialog->m_Mutex));
 
 	// Attempt to lock the shared resource
-	if (singleLock.Lock(INFINITE));
+	if (singleLock.Lock(INFINITE))
+	{
+		//Log Lock success
+	}
 
 	if (pdialog->Consis.ConnectionStarted == FALSE)
 	{

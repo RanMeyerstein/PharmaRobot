@@ -556,7 +556,16 @@ BOOL CPharmaRobot10Dlg::GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDes
 		// Create a CDBVariant object to
 		// store field data
 		CDBVariant varValue;
-		rs.GetFieldValue(1, varValue);
+		TRY{
+			rs.GetFieldValue(1, varValue);
+		}
+		CATCH_ALL(e)
+		{
+			wsprintf(pDescription, L"Record not found");
+			rs.Close();
+			return FALSE;
+		}
+		END_CATCH_ALL
 		wsprintf(pDescription, varValue.m_pstringW->GetString());
 		rs.Close();
 		return TRUE;

@@ -104,6 +104,7 @@
     <ClInclude Include="ConsisComm.h" />
     <ClInclude Include="PharmaRobot 1.0.h" />
     <ClInclude Include="PharmaRobot 1.0Dlg.h" />
+    <ClInclude Include="ProRBT.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -113,6 +114,7 @@
     <ClCompile Include="ListenerSocket.cpp" />
     <ClCompile Include="PharmaRobot 1.0.cpp" />
     <ClCompile Include="PharmaRobot 1.0Dlg.cpp" />
+    <ClCompile Include="ProRBT.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
