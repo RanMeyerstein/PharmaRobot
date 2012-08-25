@@ -7,91 +7,11 @@
 #include <iostream>
 #include "Iphlpapi.h"
 #include "ProRBT.h"
+#include "ConsisComm.h"
 
-_TCHAR AckBuffer[100];
+extern 	PRORBTPARAMSACK ackemessage;
 
-__declspec(align(8)) 
-
-/************** A type Start ***********/
-struct AConsisReplyHeader{
-
-	char RecordType;
-	char OrderNumber[8];
-	char DemandingCounterUnitId[3];
-	char DispenserStation[3];
-	char Priority;
-	char NumberOfArticles[2];
-};
-
-struct AConsisReplyDispensedOcc{
-
-	char PZN[7];
-	char DispensedQuantity[5];
-	char Flag;
-	char ArticleId[30];
-};
-/************** A type End ***********/
-
-/************** a type Start ***********/
-struct aConsisReplyHeader{
-
-	char RecordType;
-	char OrderNumber[8];
-	char DemandingCounterUnitId[3];
-	char DispenserStation[3];
-	char OrderState[2];
-	char NumberOfArticles[2];
-};
-
-struct aConsisReplyDispensedOcc{
-
-	char PZN[7];
-	char DispensedQuantity[5];
-	char ArticleId[30];
-};
-/************** a type End ***********/
-
-
-/************** B type Start ***********/
-struct BConsisStockRequest{
-
-	char RecordType;
-	char DemandingCounterUnitId[3];
-	char PZN[7];
-	char ArticleId[30];
-};
-/************** B type End ***********/
-
-/************** b type Start ***********/
-struct bConsisReplyHeader{
-
-	char RecordType;
-	char DemandingCounterUnitId[3];
-	char PZN[7];
-	char TotalQuantity[5];
-	char NumStockLocations[2];
-};
-
-struct bConsisReplyStockLocations{
-
-	char StockLocation[10];
-	char Capacity[5];
-	char PartialStockAtLocation[5];
-	char Expirydate[6];
-};
-
-struct bConsisReplyFooter{
-
-	char ArticleId[30];
-};
-/************** b type End ***********/
-
-typedef enum QUERYRESPONSE
-{
-	Q_ERROR = 0,
-	Q_NOACK,
-	Q_SENDACK
-};
+ProRbtDb g_ProRbtDb;
 
 
 QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg* pdialog)
@@ -231,11 +151,11 @@ QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10
 			int ReqQuan = _wtoi(ReqQuantity);
 			if(DisQuan < ReqQuan)
 			{
-				wsprintf(AckBuffer,L"מפריט מסוג\n%s\n\nחסרים\n%d\nמבקשת הניפוק",description , ReqQuan - DisQuan);
+				wsprintf(ackemessage.Message,L"מפריט מסוג\n%s\n\nחסרים\n%d\nמבקשת הניפוק",description , ReqQuan - DisQuan);
 			}
 			else
 			{
-				wsprintf(AckBuffer,L"הונפקו מפריט מסוג\n%s\n %d פריטים",description , DisQuan);
+				wsprintf(ackemessage.Message,L"הונפקו מפריט מסוג\n%s\n %d פריטים",description , DisQuan);
 			}
 			singleLock.Unlock();
 			return Q_SENDACK;
@@ -243,7 +163,7 @@ QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10
 
 		singleLock.Unlock();
 	}
-	wsprintf(AckBuffer,L" שרת קונסיס אינו זמין");
+	wsprintf(ackemessage.Message,L" שרת קונסיס אינו זמין");
 	return Q_SENDACK;
 }
 
@@ -337,11 +257,11 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		{
 			if (totalQuantity)
 			{
-				wsprintf(AckBuffer,L"Article:\n %s\nQuantity: \n%d", description, totalQuantity);
+				wsprintf(ackemessage.Message,L"Article:\n %s\nQuantity: \n%d", description, totalQuantity);
 			}
 			else
 			{
-				wsprintf(AckBuffer,L"No items of Article: %s", description);
+				wsprintf(ackemessage.Message,L"No items of Article: %s", description);
 			}
 		}
 		else
@@ -349,18 +269,18 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 			//Fill Ack message content
 			if (totalQuantity)
 			{
-				wsprintf(AckBuffer,L"מפריט מסוג\n%s\nקיימים %d\nבמלאי", totalQuantity, cleanArticleID.GetString());
+				wsprintf(ackemessage.Message,L"מפריט מסוג\n%s\nקיימים %d\nבמלאי", totalQuantity, cleanArticleID.GetString());
 			}
 			else
 			{
-				wsprintf(AckBuffer,L"פריט מסוג\n%s\nאינו קיים במלאי", cleanArticleID.GetString());
+				wsprintf(ackemessage.Message,L"פריט מסוג\n%s\nאינו קיים במלאי", cleanArticleID.GetString());
 			}
 		}
 
 		singleLock.Unlock();
 		return Q_SENDACK;
 	}
-	wsprintf(AckBuffer,L" שרת קונסיס לא זמין\0");
+	wsprintf(ackemessage.Message,L" שרת קונסיס לא זמין\0");
 	singleLock.Unlock();
 	return Q_SENDACK;
 }
@@ -425,7 +345,7 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		if (pProRoboParams->Header[0] == '`')
 		{
 			pdialog->m_listBoxMain.ResetContent();
-			st = "Received from Client: "; st += clientaddress; pdialog->m_listBoxMain.AddString(st);
+			//st = "Received from Client: "; st += clientaddress; pdialog->m_listBoxMain.AddString(st);
 			st = "Counter Unit ID: "; st +=  pProRoboParams->CounterUnit; pdialog->m_listBoxMain.AddString(st);
 			st = "Directive: "; st += pProRoboParams->Directive; pdialog->m_listBoxMain.AddString(st);
 			st = "Bracode: "; st += pProRoboParams->Barcode; pdialog->m_listBoxMain.AddString(st);
@@ -440,23 +360,32 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 			}
 			else if (pProRoboParams->Directive[0] == L'2')
 			{
-				res = HandleDispenseCommand(pProRoboParams, pdialog);
+				res = g_ProRbtDb.HandleProRbtLine(pProRoboParams, pdialog);
+				//res = HandleDispenseCommand(pProRoboParams, pdialog);
+
 			}
 			switch (res)
 			{
 			case Q_ERROR:
 				// Echo message back to client
-				wsprintf(AckBuffer,L"נכשלה השליחה לשרת קונסיס ");
-				clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
+				wsprintf(ackemessage.Message,L"נכשלה השליחה לשרת קונסיס");
+				ackemessage.Header[0] = L'`';
+				ackemessage.Type[0] = L'1';
+				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
 				st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
 				break;
 
 			case Q_NOACK:
+				ackemessage.Header[0] = L'`';
+				ackemessage.Type[0] = L'0';
+				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
 				break;
 
 			case Q_SENDACK:
 				// Echo message back to client
-				clntSock.Send(AckBuffer, sizeof(AckBuffer), 0);
+				ackemessage.Header[0] = L'`';
+				ackemessage.Type[0] = L'1';
+				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
 				st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
 				break ;
 			}

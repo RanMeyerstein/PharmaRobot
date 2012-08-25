@@ -2,8 +2,12 @@
 // PharmaRobot 1.0Dlg.h : header file
 //
 
+#ifndef PHARMAROBOT1_0_DLG_H
+#define PHARMAROBOT1_0_DLG_H
+
 #pragma once
 #include "ConsisComm.h"
+#include "Resource.h"
 #include "afxdb.h"
 #include "afxsock.h"
 
@@ -26,6 +30,7 @@ public:
 	CSocket  sockRecv;
 	ConsisComm Consis;
 	char     ConsisMessage[512];
+
 // Dialog Data
 	enum { IDD = IDD_PHARMAROBOT10_DIALOG };
 
@@ -97,3 +102,4 @@ public:
 	CMutex m_Mutex;
 };
 
+#endif //PHARMAROBOT1_0_DLG_H

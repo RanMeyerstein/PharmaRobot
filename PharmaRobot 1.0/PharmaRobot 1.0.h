@@ -1,6 +1,8 @@
 
 // PharmaRobot 1.0.h : main header file for the PROJECT_NAME application
 //
+#ifndef PHARMAROBOT_1_0_H
+#define PHARMAROBOT_1_0_H
 
 #pragma once
 
@@ -30,3 +32,4 @@ public:
 };
 
 extern CPharmaRobot10App theApp;
+#endif //PHARMAROBOT_1_0_H
