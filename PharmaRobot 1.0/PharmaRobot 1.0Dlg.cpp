@@ -23,8 +23,10 @@ extern "C" {
 }
 
 HANDLE hSocketThread;
+HANDLE hPmessageThread;
 
 extern DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog);
+extern DWORD WINAPI PDialogueListenerThread(CPharmaRobot10Dlg* pdialog);
 
 // CAboutDlg dialog used for App About
 
@@ -190,6 +192,9 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	hSocketThread = INVALID_HANDLE_VALUE;
 	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SocketThread, this, 0, NULL);
 
+	hPmessageThread = INVALID_HANDLE_VALUE;
+	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PDialogueListenerThread, this, 0, NULL);
+
 	ConnectedToYarpaSQL = FALSE;
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
@@ -271,6 +276,12 @@ void CPharmaRobot10Dlg::CloseEverything()
 	{
 		CloseHandle(hSocketThread);
 		hSocketThread = INVALID_HANDLE_VALUE;
+	}
+
+	if (hPmessageThread != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hPmessageThread);
+		hPmessageThread = INVALID_HANDLE_VALUE;
 	}
 
 	if (ConnectedToYarpaSQL == TRUE)

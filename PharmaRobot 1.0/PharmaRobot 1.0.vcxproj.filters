@@ -65,6 +65,9 @@
     <ClCompile Include="ProRBT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ProductInfoDialogue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PharmaRobot 1.0.rc">

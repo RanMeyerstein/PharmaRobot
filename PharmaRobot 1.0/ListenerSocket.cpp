@@ -20,7 +20,7 @@ QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10
 	CString st;
 	size_t retsize, len;
 	int location, origsize, MessageLength;
-	char nstring[100], buffer[1024];
+	char nstring[100], buffer[MAX_CONSIS_MESSAGE_SIZE];
 	aConsisReplyHeader *paMesHeader;
 	aConsisReplyDispensedOcc* aocc;
 
@@ -107,7 +107,7 @@ QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10
 			do
 			{
 				MessageLength = sizeof(buffer);
-				pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength);
+				pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000);
 
 				buffer[MessageLength] = '\0';
 				paMesHeader = (aConsisReplyHeader *)buffer;
@@ -210,14 +210,14 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 
 		pdialog->ConsisMessage[0] = 'B';
 
-		char buffer[1024]; buffer[0] = 0;
+		char buffer[MAX_CONSIS_MESSAGE_SIZE]; buffer[0] = 0;
 		int MessageLength;
 		while (buffer[0] != 'b')//BUG override. Sometimes the function returns an 'a' response
 		{
 			/* Send B message to CONSIS */
 			pdialog->Consis.SendConsisMessage(pdialog->ConsisMessage, 42);
 			MessageLength = sizeof(buffer);
-			pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength);
+			pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000);
 		}
 		buffer[MessageLength] = '\0';
 

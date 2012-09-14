@@ -5,10 +5,12 @@
 #include <ws2tcpip.h>
 #include <stdio.h>
 
+#define MAX_CONSIS_MESSAGE_SIZE 1024
 
 __declspec(align(8)) 
 
-/************** A type Start ***********/
+/**************** DISPENSE DIALOGUE *************/
+/************** A type Start Requested by PMS (this application) ***********/
 struct AConsisReplyHeader{
 
 	char RecordType;
@@ -28,7 +30,7 @@ struct AConsisReplyDispensedOcc{
 };
 /************** A type End ***********/
 
-/************** a type Start ***********/
+/************** a type Start Answered by CONSIS ***********/
 struct aConsisReplyHeader{
 
 	char RecordType;
@@ -48,7 +50,8 @@ struct aConsisReplyDispensedOcc{
 /************** a type End ***********/
 
 
-/************** B type Start ***********/
+/**************** STOCK DIALOGUE *************/
+/************** B type Start  Requested by PMS (this application) ***********/
 struct BConsisStockRequest{
 
 	char RecordType;
@@ -58,7 +61,7 @@ struct BConsisStockRequest{
 };
 /************** B type End ***********/
 
-/************** b type Start ***********/
+/************** b type Start Answered by CONSIS ***********/
 struct bConsisReplyHeader{
 
 	char RecordType;
@@ -82,6 +85,34 @@ struct bConsisReplyFooter{
 };
 /************** b type End ***********/
 
+
+/**************** PRODUCT INFORMATION DIALOGUE *************/
+/************** p type - Requested by CONSIS ***********/
+struct pConsisRequestMessage{
+
+	char RecordType;                //'p'
+	char DemandingCounterUnitId[3];
+	char PZN[7];                    //Always zeroes
+	char EAN[13];                   //Blank - Not relevant for IL
+	char ArticleId[30];             //Our Barcode
+};
+/************** p type End ***********/
+
+/************** P type - Answered by PMS (this application) ***********/
+struct PConsisPmsResponseMessage{
+
+	char RecordType;                //'P'
+	char DemandingCounterUnitId[3];
+	char PZN[7];                    //Always zeroes
+	char ArticleName[40];           //Extracted from Yarpa DB
+	char AbrDosageForm[3];          //Zeroed
+	char PackageUnit[10];           //Zeroed
+	char EAN[13];                   //Blank - Not relevant for IL
+	char ExpiryDate[6];             //DDMMYY
+	char ArticleId[30];             //Our Barcode
+};
+/************** P type End ***********/
+
 class ConsisComm{
 
 public:
@@ -94,7 +125,7 @@ public:
 	int SendStockQuery(char* MessageContent);
 	int SendDispnseCommand(char* MessageContent);
 	BOOL SendConsisMessage(char* MessageContent, size_t BufferSize);	
-	BOOL ReceiveConsisMessage(char* ReceiveBuffer, int * messageLength);
+	BOOL ReceiveConsisMessage(char* ReceiveBuffer, int * messageLength, int timeout);
 
 private:
 

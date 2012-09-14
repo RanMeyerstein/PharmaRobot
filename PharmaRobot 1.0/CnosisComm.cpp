@@ -183,12 +183,12 @@ BOOL ConsisComm::SendConsisMessage(char* MessageContent, size_t BufferSize)
 	return FALSE;
 }
 
-BOOL ConsisComm::ReceiveConsisMessage(char* ReceiveBuffer, int * messageLength)
+BOOL ConsisComm::ReceiveConsisMessage(char* ReceiveBuffer, int * messageLength, int timeout)
 {
 	char pending = 1;
 	while (pending)
 	{
-		if (ptCIRecvMessgNB( ReceiveBuffer, messageLength, &pending, 1000) != 0)
+		if (ptCIRecvMessgNB( ReceiveBuffer, messageLength, &pending, timeout) != 0)
 		return FALSE;
 	}
 	return TRUE;
@@ -200,7 +200,7 @@ int ConsisComm::SendStockQuery(char* MessageContent)
 	if(rc!=0)
 		m_dlglistBox->AddString(L"sending stock query failed");
 
-	char message_buf[1024];
+	char message_buf[MAX_CONSIS_MESSAGE_SIZE];
 	char pending;
 	int message_len = sizeof(message_buf);
 	rc = ptCIRecvMessgNB( message_buf, &message_len, &pending,1000); //block at most 1 second
@@ -213,7 +213,7 @@ int ConsisComm::SendStockQuery(char* MessageContent)
 	{
 		message_buf[message_len]= '\0';
 		size_t convertedChars = 0;
-		wchar_t wcstring[1024];
+		wchar_t wcstring[MAX_CONSIS_MESSAGE_SIZE];
 		mbstowcs_s(&convertedChars, wcstring, message_len + 1, message_buf, _TRUNCATE);
 		m_dlglistBox->AddString(wcstring);
 	}
@@ -227,8 +227,8 @@ int ConsisComm::SendDispnseCommand(char* MessageContent)
 	if(rc!=0)
 		m_dlglistBox->AddString(L"sending dispense command failed");
 
-	char message_buf[1024];
-	memset(message_buf, 0, 1024);
+	char message_buf[MAX_CONSIS_MESSAGE_SIZE];
+	memset(message_buf, 0, MAX_CONSIS_MESSAGE_SIZE);
 	char pending;
 	int message_len = sizeof(message_buf);
 
@@ -244,7 +244,7 @@ int ConsisComm::SendDispnseCommand(char* MessageContent)
 		{
 			message_buf[message_len]= '\0';
 			size_t convertedChars = 0;
-			wchar_t wcstring[1024];
+			wchar_t wcstring[MAX_CONSIS_MESSAGE_SIZE];
 			mbstowcs_s(&convertedChars, wcstring, message_len + 1, message_buf, _TRUNCATE);
 			m_dlglistBox->AddString(wcstring);
 		}

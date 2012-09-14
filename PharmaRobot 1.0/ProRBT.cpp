@@ -122,7 +122,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 	QUERYRESPONSE returnvalue = Q_NOACK;
 	size_t retsize, len;
 	int MessageLength, MessageASize, NumLinesInConsisMessage;
-	char nstring[100], buffer[1024];
+	char nstring[100], buffer[MAX_CONSIS_MESSAGE_SIZE];
 	aConsisReplyHeader *paMesHeader;
 	aConsisReplyDispensedOcc* aocc;
 	REQUESTINTERMEIDATEDB InterMDb[MAXIMAL_NUM_LINES_SUPPORTED];
@@ -261,7 +261,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				do
 				{
 					MessageLength = sizeof(buffer);
-					pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength);
+					pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000);
 
 					buffer[MessageLength] = '\0';
 					paMesHeader = (aConsisReplyHeader *)buffer;
@@ -329,6 +329,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 			{
 				//Error with Consis, Init entire Database
 				InitProRbtDb();
+				singleLock.Unlock();
 				return Q_ERROR;
 			}
 
@@ -374,6 +375,8 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 		pCounterSession->ExpectedNumLines = -1;
 		pCounterSession->ReceivedNumLines = -1;
 		pCounterSession->CurrentSessionId = -1;
+
+		singleLock.Unlock();
 	}
 	return returnvalue;
 }
