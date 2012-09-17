@@ -362,7 +362,8 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 
 		if (missingitems)
 		{
-			memcpy(ackemessage.Message,AckedString.GetString(),AckedString.GetLength()* sizeof(wchar_t));
+			memset(ackemessage.Message, 0, ACK_MESSAGE_SIZE * sizeof(_TCHAR));
+			memcpy(ackemessage.Message, AckedString.GetString(), AckedString.GetLength() * sizeof(wchar_t));
 			returnvalue = Q_SENDACK;
 		}
 		else

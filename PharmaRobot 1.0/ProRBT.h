@@ -25,9 +25,11 @@ struct PRORBTPARAMS
 	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[4];
 };
 
+#define ACK_MESSAGE_SIZE 980
+
 struct PRORBTPARAMSACK
 {
-	_TCHAR Header[1],Type[1], Message[980];
+	_TCHAR Header[1],Type[1], Message[ACK_MESSAGE_SIZE];
 };
 
 
