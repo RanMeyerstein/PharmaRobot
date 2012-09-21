@@ -257,11 +257,11 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		{
 			if (totalQuantity)
 			{
-				wsprintf(ackemessage.Message,L"Article:\n %s\nQuantity: \n%d", description, totalQuantity);
+				wsprintf(ackemessage.Message,L"מצב מלאי\nמספר מזהה: %s\nמספר במלאי [%d]", description, totalQuantity);
 			}
 			else
 			{
-				wsprintf(ackemessage.Message,L"No items of Article: %s", description);
+				wsprintf(ackemessage.Message,L"אין פריטים במלאי בעלי מספר מזהה \n%s", description);
 			}
 		}
 		else
@@ -368,7 +368,6 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 			{
 			case Q_ERROR:
 				// Echo message back to client
-				wsprintf(ackemessage.Message,L"נכשלה השליחה לשרת קונסיס");
 				ackemessage.Header[0] = L'`';
 				ackemessage.Type[0] = L'1';
 				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);

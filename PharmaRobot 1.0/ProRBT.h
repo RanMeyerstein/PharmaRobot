@@ -22,7 +22,7 @@ typedef enum QUERYRESPONSE
 
 struct PRORBTPARAMS
 {
-	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[4];
+	_TCHAR Header[1],Barcode[14], Qty[4], SessionId[17], LineNum[5], TotalLines[5], Directive[2], CounterUnit[4], Dispenser[3];
 };
 
 #define ACK_MESSAGE_SIZE 980

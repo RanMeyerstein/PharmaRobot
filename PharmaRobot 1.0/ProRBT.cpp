@@ -199,6 +199,13 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				wsprintf(Source, StringFromProRbt.GetString());
 				wcstombs(&(pdialog->ConsisMessage[location]), Source, len);
 
+				/*Dispenser Taken from ProRBT parameters*/
+				StringFromProRbt = pCounterSession->RbtParamLinesArr[1].Dispenser;//Take Dispenser ID from first line
+				len = StringFromProRbt.GetLength();
+				location = 15 - len;
+				wsprintf(Source, StringFromProRbt.GetString());
+				wcstombs(&(pdialog->ConsisMessage[location]), Source, len);
+
 				//Fill Barcode and Quantity per line 
 				for (int i = 0; i < NumLinesInConsisMessage ; i++){
 					/*Barcode taken from ProRBT parameters*/
@@ -238,13 +245,6 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				pdialog->m_EditPriority.GetWindowTextW(wideStr,origsize);
 				wcstombs_s(&convertedChars, nstring, origsize, wideStr , _TRUNCATE);
 				location = 16 - (origsize - 1);
-				memcpy((void*)&(pdialog->ConsisMessage[location]), (void*) nstring, (origsize - 1));
-
-				/*Dispenser Taken from GUI*/
-				origsize = pdialog->m_EditDispenser.GetWindowTextLengthW() + 1;
-				pdialog->m_EditDispenser.GetWindowTextW(wideStr,origsize);
-				wcstombs_s(&convertedChars, nstring, origsize, wideStr , _TRUNCATE);
-				location = 15 - (origsize - 1);
 				memcpy((void*)&(pdialog->ConsisMessage[location]), (void*) nstring, (origsize - 1));
 
 				pdialog->ConsisMessage[0] = 'A';
@@ -330,6 +330,8 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				//Error with Consis, Init entire Database
 				InitProRbtDb();
 				singleLock.Unlock();
+				memset(ackemessage.Message, 0, ACK_MESSAGE_SIZE * sizeof(_TCHAR));
+				wsprintf(ackemessage.Message,L"תקלה בתקשורת לשרת קונסיס");
 				return Q_ERROR;
 			}
 
@@ -385,6 +387,14 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 
 QUERYRESPONSE ProRbtDb::HandleProRbtLine(PRORBTPARAMS* pProRbtLine, CPharmaRobot10Dlg* pdialog)
 {
+	//First Check if quantity is zero. If so do not handle entry and return error message to ProRBT.exe
+	int quantitychecked = _wtoi(pProRbtLine->Qty);
+	if (quantitychecked == 0) {
+		memset(ackemessage.Message, 0, ACK_MESSAGE_SIZE * sizeof(_TCHAR));
+		wsprintf(ackemessage.Message,L"כמות לניפוק אפס אינה חוקית");
+		return Q_ERROR;//CONSIS does not habdle zero quantity well...
+	}
+
 	int counterid = _wtoi(pProRbtLine->CounterUnit);
 
 	int dBEntry = GetProRbtDbEntryFromCounterId(counterid);
@@ -393,6 +403,7 @@ QUERYRESPONSE ProRbtDb::HandleProRbtLine(PRORBTPARAMS* pProRbtLine, CPharmaRobot
 	{//Entry not found, produce new one
 		dBEntry = AcquireProRbtDbEntry(counterid);
 		if (dBEntry == ENTRY_NOT_FOUND) {
+			memset(ackemessage.Message, 0, ACK_MESSAGE_SIZE * sizeof(_TCHAR));
 			wsprintf(ackemessage.Message,L" מסד נתונים מלא\0");
 			return Q_ERROR; //database is full
 		}
@@ -400,6 +411,7 @@ QUERYRESPONSE ProRbtDb::HandleProRbtLine(PRORBTPARAMS* pProRbtLine, CPharmaRobot
 
 	//Fill Line into Database and handle if all lines were intercepted
 	if (FillProRbtDbLine(pProRbtLine, dBEntry) == FALSE) {
+			memset(ackemessage.Message, 0, ACK_MESSAGE_SIZE * sizeof(_TCHAR));
 			wsprintf(ackemessage.Message,L"Bad session ID");
 		return Q_ERROR; // Bad session ID intercepted
 	}
