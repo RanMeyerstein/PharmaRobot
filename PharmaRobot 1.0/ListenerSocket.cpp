@@ -32,7 +32,7 @@ QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10
 
 		if (pdialog->Consis.ConnectionStarted == FALSE)
 		{
-			if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain)))
+			if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain), &(pdialog->m_CheckBoxRemoteSvr)))
 				pdialog->EnableCondsisTab();
 		}
 
@@ -182,7 +182,7 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 
 	if (pdialog->Consis.ConnectionStarted == FALSE)
 	{
-		if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain)))
+		if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain), &(pdialog->m_CheckBoxRemoteSvr)))
 			pdialog->EnableCondsisTab();
 	}
 
@@ -251,7 +251,6 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		wsprintf(articleID,cleanArticleID.GetString());
 
 		wchar_t description[256];
-
 		//Get Description from Yarpa SQL
 		if (pdialog->GetItemDescFromBarcode(articleID, description))
 		{
@@ -328,7 +327,6 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		if (!clntSock.GetPeerName((SOCKADDR*)&echoClntAddr, &clntLen)) {
 			//DieWithError("clntSock.GetPeerName() failed");
 		}
-		char clientaddress[10];
 
 		//_ultoa_s(echoClntAddr.sin_addr.S_un.S_addr,clientaddress,10);
 

@@ -11,6 +11,9 @@ CIGetLastSystemError ptCIGetLastSystemError = {NULL};
 typedef SOCKET (*CIGetSocket)( void );
 CIGetSocket ptCIGetSocket = {NULL};
 
+typedef int (*CISockPort)(SOCKET socknumber);
+CISockPort ptCISockPort = {NULL};
+
 typedef int (*CIOpen)( char * pszClientName );
 CIOpen ptCIOpen = {NULL};
 
@@ -28,6 +31,7 @@ CIRecvMessgNB ptCIRecvMessgNB = {NULL};
 
 typedef int (*CIDeleteResponse)(void);
 CIDeleteResponse ptCIDeleteResponse;
+
 
 ConsisComm::ConsisComm()
 {
@@ -65,7 +69,7 @@ ConsisComm::~ConsisComm()
 	}
 }
 
-int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
+int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox, CButton * remotebutton)
 {
 	int returnedValue = 0;
 	WCHAR mbstring[256];
@@ -95,6 +99,7 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
 		{
 			ptCIGetLastSystemError = (CIGetLastSystemError)GetProcAddress(hinstLibCD, "CIGetLastSystemError"); 
 			ptCIGetSocket = (CIGetSocket)GetProcAddress(hinstLibCD, "CIGetSocket");
+			ptCISockPort = (CISockPort)GetProcAddress(hinstLibCD, "CISockPort");
 			ptCIOpen =  (CIOpen)GetProcAddress(hinstLibCD, "CIOpen");
 			ptCIClose = (CIClose)GetProcAddress(hinstLibCD, "CIClose");
 			ptCISendMessg = (CISendMessg)GetProcAddress(hinstLibCD, "CISendMessg");
@@ -109,6 +114,9 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
 			}
 			if (NULL != ptCIGetSocket) 		{
 				OutputDebugString(L"Got ptCIGetSocket function pointer\n");// 0x%x \n", ptCIGetSocket); 
+			}
+			if (NULL != ptCISockPort) 		{
+				OutputDebugString(L"Got ptCISockPort function pointer\n");// 0x%x \n", ptCISockPort); 
 			}
 			if (NULL != ptCIOpen) 		{
 				OutputDebugString(L"Got ptCIOpen function pointer\n");//0x%x \n",ptCIOpen); 
@@ -137,8 +145,19 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox)
 			OutputDebugString(L"Failed to open Connection with Client\n");
 		}
 
+		if (remotebutton->GetCheck())
+		{
+			ret = ptCISockPort(8006);
+			if (ret != 0 )		{
+				OutputDebugString(L"Set Port to 8006\n");// = %d\n", ret);
+			}
+			else		{
+				OutputDebugString(L"Failed to Set Port in CONSIS Server\n");
+			}
+		}
+
 		message = "R" "001" "C113" "004ASPIR";
-		rc = ptCISendMessg( message, strlen(message),3000);
+		rc = ptCISendMessg( message, strlen(message),10000);
 		if(rc!=0)
 		{
 			dlglistBox->AddString(L"sending R-message failed");//,rc);

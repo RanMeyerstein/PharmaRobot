@@ -113,6 +113,43 @@ struct PConsisPmsResponseMessage{
 };
 /************** P type End ***********/
 
+
+/**************** STOCK INFORMATION DIALOGUE *************/
+/************** i type - Requested by CONSIS ***********/
+struct iConsisRequestMessage{
+
+	char RecordType;                //'i'
+	char OrderNumber[8];
+	char DemandingCounterUnitId[3];
+	char DeliveryNoteNumber[12];    //Text format
+	char PZN[7];                    //Always zeroes
+	char EAN[13];                   //Blank - Not relevant for IL
+	char Quantity[5];
+	char ExpiryDate[6];             //DDMMYY
+	char OrderState[2];             /*'00' Receipt of goods     '01' Returns              '02' Start of new supply 
+									  '03' End of supply        '04' New article (return) '05' New article (goods receipt) 
+									  '06' Ready                '07' Cancelled */
+	char ArticleId[30];             //Our Barcode
+	char Barcode[20];               //Zeroed, we use article id
+};
+/************** i type End ***********/
+
+/************** I type - Answered by PMS (this application) ***********/
+struct IConsisPmsResponseMessage{
+
+	char RecordType; 	//'I'
+	char OrderNumber[8];
+	char DemandingCounterUnitId[3];
+	char PZN[7];                    //Always zeroes
+	char Quantity[5];
+	char ExpiryDate[6];             //DDMMYY
+	char State[2];                  /*'00' article may be stored '01' article may not be stored 
+									  '02' article must be stored with expiry date */
+	char Text[4];                   // zeroed assuming no text - 3 characters + data + \0 Line < 70 characters Height < 18 characters
+	char ArticleId[30];             //Our ID
+};
+/************** I type End ***********/
+
 class ConsisComm{
 
 public:
@@ -121,7 +158,7 @@ public:
 
 	bool ConnectionStarted;
 	bool DllsLoaded;
-	int ConnectToConsis(char* clientName, CListBox * dlglistBox); 
+	int ConnectToConsis(char* clientName, CListBox * dlglistBox, CButton * remotebutton); 
 	int SendStockQuery(char* MessageContent);
 	int SendDispnseCommand(char* MessageContent);
 	BOOL SendConsisMessage(char* MessageContent, size_t BufferSize);	

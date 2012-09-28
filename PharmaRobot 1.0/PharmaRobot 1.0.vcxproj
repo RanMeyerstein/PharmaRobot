@@ -110,11 +110,11 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CnosisComm.cpp" />
+    <ClCompile Include="ConsisComm.cpp" />
     <ClCompile Include="ListenerSocket.cpp" />
     <ClCompile Include="PharmaRobot 1.0.cpp" />
     <ClCompile Include="PharmaRobot 1.0Dlg.cpp" />
-    <ClCompile Include="ProductInfoDialogue.cpp" />
+    <ClCompile Include="AsynchDialogue.cpp" />
     <ClCompile Include="ProRBT.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

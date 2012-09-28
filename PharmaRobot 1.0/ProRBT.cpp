@@ -176,7 +176,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 			//Build an 'A' command every ten ProRBT lines
 			if (pdialog->Consis.ConnectionStarted == FALSE)
 			{
-				if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain)))
+				if (pdialog->Consis.ConnectToConsis("ShorT", &(pdialog->m_listBoxMain), &(pdialog->m_CheckBoxRemoteSvr)))
 					pdialog->EnableCondsisTab();
 			}
 
@@ -348,7 +348,6 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 			{
 				missingitems = true;
 				wchar_t description[256];
-
 				//Get Description from Yarpa SQL. If failed publish back to Client the Barcode
 				if (!pdialog->GetItemDescFromBarcode(InterMDb[m].ArctileIdRequested, description))
 					wsprintf(description,  InterMDb[m].ArctileIdRequested);

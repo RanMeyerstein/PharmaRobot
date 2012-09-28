@@ -56,16 +56,16 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CnosisComm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ListenerSocket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ProRBT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProductInfoDialogue.cpp">
+    <ClCompile Include="AsynchDialogue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConsisComm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

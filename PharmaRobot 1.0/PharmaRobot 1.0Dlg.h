@@ -92,14 +92,17 @@ public:
 
 	void EnableCondsisTab();
 	BOOL GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDescription);
+	BOOL CPharmaRobot10Dlg::GetTaFromYarpaByBarcode(wchar_t * pBarcode, int * isRobotItem);
 	BOOL InitiateYarpaSQL();
 	CEdit    m_EditOrderNum; //Parameters taken From GUI for 'A' command
 	CEdit    m_EditPriority; //Parameters taken From GUI for 'A' command
 	CEdit    m_EditDispenser;//Parameters taken From GUI for 'A' command
+	CButton  m_CheckBoxRemoteSvr;
 
 	int      m_OrderNum;
 	//Mutex for access to CONSIS
 	CMutex m_Mutex;
+	afx_msg void OnBnClickedButtonclr();
 };
 
 #endif //PHARMAROBOT1_0_DLG_H

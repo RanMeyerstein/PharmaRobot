@@ -26,7 +26,7 @@ HANDLE hSocketThread;
 HANDLE hPmessageThread;
 
 extern DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog);
-extern DWORD WINAPI PDialogueListenerThread(CPharmaRobot10Dlg* pdialog);
+extern DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog);
 
 // CAboutDlg dialog used for App About
 
@@ -105,6 +105,9 @@ void CPharmaRobot10Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDITBarcodeSQL, m_EditBarcodeSQL);
 	DDX_Control(pDX, IDC_EDITDSN, m_EditDsnSQL);
 
+	DDX_Control(pDX, IDC_CHECK_REMOTE_SVR, m_CheckBoxRemoteSvr);
+	
+
 }
 
 BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
@@ -118,6 +121,7 @@ BEGIN_MESSAGE_MAP(CPharmaRobot10Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON3, &CPharmaRobot10Dlg::OnBnClickedButton3)
 	ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CPharmaRobot10Dlg::OnTcnSelchangeTab1)
 	ON_BN_CLICKED(IDC_BUTTONGetSQLDesc, &CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc)
+	ON_BN_CLICKED(IDC_BUTTONCLR, &CPharmaRobot10Dlg::OnBnClickedButtonclr)
 END_MESSAGE_MAP()
 
 // CPharmaRobot10Dlg message handlers
@@ -193,7 +197,7 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SocketThread, this, 0, NULL);
 
 	hPmessageThread = INVALID_HANDLE_VALUE;
-	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PDialogueListenerThread, this, 0, NULL);
+	hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AsynchDialogueListenerThread, this, 0, NULL);
 
 	ConnectedToYarpaSQL = FALSE;
 
@@ -316,13 +320,14 @@ void CPharmaRobot10Dlg::EnableCondsisTab()
 		m_EditPriority.EnableWindow();
 		m_EditQuantity.EnableWindow();
 		m_ButtonDispense.EnableWindow();
+		m_CheckBoxRemoteSvr.EnableWindow(FALSE);
 		m_ButtonConnect.EnableWindow(FALSE);
 }
 
 void CPharmaRobot10Dlg::OnBnClickedButton1()
 {
 	//m_listBoxMain.AddString(L"Button Pressed");
-	if (Consis.ConnectToConsis("ShorT", &m_listBoxMain))
+	if (Consis.ConnectToConsis("ShorT", &m_listBoxMain, &m_CheckBoxRemoteSvr))
 	{
 		EnableCondsisTab();
 	}
@@ -494,7 +499,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_ButtonStock.ShowWindow(SW_SHOW);
 		m_ButtonDispense.ShowWindow(SW_SHOW);
 		m_ButtonConnect.ShowWindow(SW_SHOW);
-
+		m_CheckBoxRemoteSvr.ShowWindow(SW_SHOW);
 		m_Static1.ShowWindow(SW_SHOW);
 		m_Static2.ShowWindow(SW_SHOW);
 		m_Static3.ShowWindow(SW_SHOW);
@@ -505,6 +510,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_Static8.ShowWindow(SW_SHOW);
 		m_Static9.ShowWindow(SW_SHOW);
 		m_Static10.ShowWindow(SW_SHOW);
+
 
 		m_ListSQLDesc.ShowWindow(SW_HIDE);
 		m_EditBarcodeSQL.ShowWindow(SW_HIDE);
@@ -526,7 +532,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_ButtonStock.ShowWindow(SW_HIDE);
 		m_ButtonDispense.ShowWindow(SW_HIDE);
 		m_ButtonConnect.ShowWindow(SW_HIDE);
-
+		m_CheckBoxRemoteSvr.ShowWindow(SW_HIDE);
 		m_Static1.ShowWindow(SW_HIDE);
 		m_Static2.ShowWindow(SW_HIDE);
 		m_Static3.ShowWindow(SW_HIDE);
@@ -537,6 +543,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 		m_Static8.ShowWindow(SW_HIDE);
 		m_Static9.ShowWindow(SW_HIDE);
 		m_Static10.ShowWindow(SW_HIDE);
+
 
 		m_ListSQLDesc.ShowWindow(SW_SHOW);
 		m_EditBarcodeSQL.ShowWindow(SW_SHOW);
@@ -550,7 +557,7 @@ void CPharmaRobot10Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
 
 BOOL CPharmaRobot10Dlg::GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDescription)
 {
-	wchar_t command[200];
+	wchar_t command[500];
 
 	if (ConnectedToYarpaSQL== FALSE)
 	{
@@ -567,8 +574,10 @@ BOOL CPharmaRobot10Dlg::GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDes
 		// Create a CDBVariant object to
 		// store field data
 		CDBVariant varValue;
+
+		short num = 1;
 		TRY{
-			rs.GetFieldValue(1, varValue);
+			rs.GetFieldValue(num, varValue);//Get Item Name
 		}
 		CATCH_ALL(e)
 		{
@@ -578,14 +587,65 @@ BOOL CPharmaRobot10Dlg::GetItemDescFromBarcode(wchar_t * pBarcode, wchar_t* pDes
 		}
 		END_CATCH_ALL
 		wsprintf(pDescription, varValue.m_pstringW->GetString());
+
 		rs.Close();
-		return TRUE;
+
 	}
 	else
 	{
 		m_listBoxMain.AddString(L"Failed to read Barcode from SQL");
 		return FALSE;
 	}
+
+	return TRUE;
+}
+
+
+
+BOOL CPharmaRobot10Dlg::GetTaFromYarpaByBarcode(wchar_t * pBarcode, int * isRobotItem)
+{
+	wchar_t command[500], TA[20];
+
+	if (ConnectedToYarpaSQL== FALSE)
+	{
+		if (!InitiateYarpaSQL())
+			return FALSE;
+	}
+
+	memset(&(pBarcode[13]),'\0',1);
+
+	CRecordset rs(&m_YarpaDb);
+
+	wsprintf(command,L"SELECT DISTINCT * \
+					  FROM XMLY INNER JOIN XITEMS ON XMLY.MCODE = XITEMS.CODE \
+					  WHERE (((XITEMS.BARCODE)='%s') AND ((XMLY.SNIF)='1340'))",pBarcode);
+
+	if (rs.Open(CRecordset::snapshot,command,CRecordset::readOnly))
+	{
+		CDBVariant varValue;
+		short num1=8;
+		TRY{
+			rs.GetFieldValue(num1, varValue); //Get TA. For Robot its 999
+		}
+		CATCH_ALL(e)
+		{
+			wsprintf(TA, L"Record not found");
+			rs.Close();
+			return FALSE;
+		}
+		END_CATCH_ALL
+
+			*isRobotItem = varValue.m_lVal;//for Robot its 999
+
+		rs.Close();
+	}
+	else
+	{
+		m_listBoxMain.AddString(L"Failed to read TA from SQL");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 BOOL CPharmaRobot10Dlg::InitiateYarpaSQL()
@@ -612,6 +672,7 @@ void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 {
 	wchar_t StringSQL[200];
 	wchar_t  st[100];
+	int robotItem = 0;
 
 	if (ConnectedToYarpaSQL== FALSE)
 	{
@@ -631,13 +692,16 @@ void CPharmaRobot10Dlg::OnBnClickedButtongetsqldesc()
 	{
 		m_ListSQLDesc.AddString(st);
 	}
+	if (GetTaFromYarpaByBarcode(StringSQL, &robotItem))
+	{
+		wsprintf(st,L"TA=%d",robotItem);
+		m_ListSQLDesc.AddString(st);
+	}
 #ifdef __DEBUGPHARMA
-
 	m_listBoxMain.AddString(StringSQL);
 	wsprintf(st,L"SELECT DISTINCT * FROM XITEMS WHERE BARCODE='%s';ORDER BY BARCODE;\0",StringSQL);
 	m_listBoxMain.AddString(st);
 #endif
-
 }
 
 void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
@@ -665,4 +729,10 @@ void CTabPharms::DrawItem(LPDRAWITEMSTRUCT lpdis)
 		pDC->SetTextColor(RGB(0,0,255));
 		pDC->TextOut(rect.left+5, rect.top+5, tci.pszText);
 	}
+}
+
+
+void CPharmaRobot10Dlg::OnBnClickedButtonclr()
+{
+	m_listBoxMain.ResetContent();
 }
