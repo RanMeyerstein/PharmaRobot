@@ -155,6 +155,16 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox, CButton
 				OutputDebugString(L"Failed to Set Port in CONSIS Server\n");
 			}
 		}
+		else
+		{
+			ret = ptCISockPort(2766);
+			if (ret != 0 )		{
+				OutputDebugString(L"Set Port to 8006\n");// = %d\n", ret);
+			}
+			else		{
+				OutputDebugString(L"Failed to Set Port in CONSIS Server\n");
+			}
+		}
 
 		message = "R" "001" "C113" "004ASPIR";
 		rc = ptCISendMessg( message, strlen(message),10000);

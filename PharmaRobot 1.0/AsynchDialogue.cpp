@@ -46,7 +46,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 			//Check if we received a 'p' request and handle it
 			if (buffer[0] == 'p')
 			{//handle a 'p' message here
-				mbstowcs_s(&convertedChars, wcstring, sizeof(pConsisRequestMessage), buffer, _TRUNCATE);
+				mbstowcs_s(&convertedChars, wcstring, sizeof(pConsisRequestMessage) + 1, buffer, _TRUNCATE);
 				wcstring[sizeof(pConsisRequestMessage)] = L'/0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 
@@ -79,7 +79,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				PResponseToConsis.RecordType = 'P';
 				memcpy(&(PResponseToConsis.ArticleId), ppRequestMessage->ArticleId, sizeof(PResponseToConsis.ArticleId));
 
-				mbstowcs_s(&convertedChars, wcstring, sizeof(PResponseToConsis), (char*)&PResponseToConsis, _TRUNCATE);
+				mbstowcs_s(&convertedChars, wcstring, sizeof(PResponseToConsis) + 1, (char*)&PResponseToConsis, _TRUNCATE);
 				wcstring[sizeof(PResponseToConsis)] = L'/0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 				//Send a response to CONSIS
@@ -89,9 +89,10 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 			//Check if we received an 'i' request and handle it
 			if (buffer[0] == 'i')
 			{//handle an 'i' message here
-				mbstowcs_s(&convertedChars, wcstring, sizeof(iConsisRequestMessage), buffer, _TRUNCATE);
+				mbstowcs_s(&convertedChars, wcstring, sizeof(iConsisRequestMessage) + 1, buffer, _TRUNCATE);
 				wcstring[sizeof(iConsisRequestMessage)] = L'/0';
-				pdialog->m_listBoxMain.AddString(wcstring);	
+				pdialog->m_listBoxMain.AddString(wcstring);
+
 				piRequestMessage = (iConsisRequestMessage *)buffer;
 
 				//Extract Article ID
@@ -109,11 +110,15 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				//State will be set to '00' by this action
 				memset ((void*)&IResponseToConsis, '0',sizeof(IResponseToConsis));
 
-				//Check if TA is 999 in Yarpa DB for this Barcode number
-				if (pdialog->GetTaFromYarpaByBarcode(articleID, &lisRobotItem))
-				{//Got a TA from SQL
-					if(lisRobotItem != 999)
-						IResponseToConsis.State[1]='1';//Article may not be stored as its not a ROBOT item according to YARPA DB
+				//check if message is "Receipt of goods" type.
+				if (piRequestMessage->OrderState[1] == '0')
+				{
+					//Check if TA is 999 in Yarpa DB for this Barcode number
+					if (pdialog->GetTaFromYarpaByBarcode(articleID, &lisRobotItem))
+					{//Got a TA from SQL
+						if(lisRobotItem != 999)
+							IResponseToConsis.State[1]='1';//Article may not be stored as its not a ROBOT item according to YARPA DB
+					}
 				}
 
 				IResponseToConsis.RecordType = 'I';
@@ -127,9 +132,9 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				memcpy(&(IResponseToConsis.DemandingCounterUnitId), piRequestMessage->DemandingCounterUnitId, 
 					sizeof(IResponseToConsis.DemandingCounterUnitId));
 
-				IResponseToConsis.Text[3] = '/0'; //Null terminator at the end of no text string
-
-				mbstowcs_s(&convertedChars, wcstring, sizeof(IResponseToConsis), (char*)&IResponseToConsis, _TRUNCATE);
+				//IResponseToConsis.Text[3] = '/0'; //Null terminator at the end of no text string
+				
+				mbstowcs_s(&convertedChars, wcstring, sizeof(IResponseToConsis) + 1, (char*)&IResponseToConsis, _TRUNCATE);
 				wcstring[sizeof(IResponseToConsis)] = L'/0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 				//Send a response to CONSIS
