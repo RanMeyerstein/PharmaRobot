@@ -214,6 +214,9 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 					location = (60 * (i + 1)) - len;
 					wchar_t barcodeSent[14];
 					wsprintf(barcodeSent, StringFromProRbt.GetString());
+					//Fill with blanks instaed of leading zeros
+					memset(&(pdialog->ConsisMessage[(60 * (i + 1)) - 30]),' ', 30);
+					//Set the barcode
 					wcstombs(&(pdialog->ConsisMessage[location]), barcodeSent, len);
 
 					/*Quantity Taken from ProRBT parameters*/

@@ -171,6 +171,7 @@ QUERYRESPONSE HandleDispenseCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10
 QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg* pdialog)
 {
 	size_t retsize;
+	BConsisStockRequest * pBresponse = (BConsisStockRequest *)pdialog->ConsisMessage;
 	//Protect with Mutex the CONSIS resource
 	CSingleLock singleLock(&(pdialog->m_Mutex));
 
@@ -206,6 +207,9 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		location = 41 - len;
 		wchar_t barcode[14];
 		wsprintf(barcode, BarCodeString.GetString());
+
+		memset(pBresponse->ArticleId,' ',30); //Clear leading zeros
+
 		wcstombs(&(pdialog->ConsisMessage[location]), barcode, len);
 
 		pdialog->ConsisMessage[0] = 'B';
@@ -236,7 +240,7 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		int totalQuantity =  atoi(TotalQua);
 
 		//Find Article ID which is in 'b' Footer after article locations
-		char* address = (char*)pHeader + sizeof(bConsisReplyHeader) + (numLocation * (sizeof(bConsisReplyStockLocations) - 1));
+		char* address = (char*)pHeader + sizeof(bConsisReplyHeader) + (numLocation * (sizeof(bConsisReplyStockLocations)));
 		bConsisReplyFooter* bfooter = (bConsisReplyFooter*)address;
 
 		//Extract Article ID
@@ -247,7 +251,7 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		//Clean leading zeroes
 		CString cleanArticleID;
 		cleanArticleID.SetString(articleID);
-		cleanArticleID.TrimLeft(L'0');
+		cleanArticleID.TrimLeft(L' ');
 		wsprintf(articleID,cleanArticleID.GetString());
 
 		wchar_t description[256];
@@ -268,7 +272,7 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 			//Fill Ack message content
 			if (totalQuantity)
 			{
-				wsprintf(ackemessage.Message,L"מפריט מסוג\n%s\nקיימים %d\nבמלאי", totalQuantity, cleanArticleID.GetString());
+				wsprintf(ackemessage.Message,L"מפריט מסוג\n%s\nקיימים %d\nבמלאי", cleanArticleID.GetString(), totalQuantity);
 			}
 			else
 			{

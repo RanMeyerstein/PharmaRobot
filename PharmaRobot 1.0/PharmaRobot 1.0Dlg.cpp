@@ -167,15 +167,15 @@ BOOL CPharmaRobot10Dlg::OnInitDialog()
 	Shell_NotifyIcon(NIM_ADD, &nidApp);
 
 	// TODO: Add extra initialization here
-	m_EditBarCodeB.SetWindowTextW(L"1234567890123");
+	m_EditBarCodeB.SetWindowTextW(L"7290008546454");
 	m_EditCounterUnitB.SetWindowTextW(L"1");
 	m_EditCounterUnitA.SetWindowTextW(L"1");
-	m_EditBarCodeA.SetWindowTextW(L"1234567890123");
+	m_EditBarCodeA.SetWindowTextW(L"7290008546454");
 	m_EditDispenser.SetWindowTextW(L"1");
 	m_EditPriority.SetWindowTextW(L"3");
 	m_EditQuantity.SetWindowTextW(L"1");
 	//m_EditBarcodeSQL.SetWindowTextW(L"7290004239988");
-	m_EditBarcodeSQL.SetWindowTextW(L"1234567890123");
+	m_EditBarcodeSQL.SetWindowTextW(L"7290008546454");
 	m_EditDsnSQL.SetWindowTextW(L"DRIVER=SQL Server;SERVER=192.168.1.5;UID=sa;PWD=B1Admin;DATABASE=PIRYON;TABLE=Xitems");
 	m_EditDsnSQL.ShowWindow(SW_HIDE);
 	WCHAR strQuan[10];
@@ -339,6 +339,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	wchar_t wcstring[100];
 	WCHAR orig[14];
 	char nstring[100];
+	BConsisStockRequest * pBresponse = (BConsisStockRequest *)ConsisMessage;
 
 	memset(ConsisMessage, '0', 41);
 	ConsisMessage[41] = '\0';
@@ -371,6 +372,8 @@ void CPharmaRobot10Dlg::OnBnClickedButton2()
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	location = 41 - m_EditBarCodeB.GetWindowTextLengthW();
 
+	memset(pBresponse->ArticleId,' ',30); //Clear leading zeros
+
 	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, origsize - 1);
 
 	ConsisMessage[0] = 'B';
@@ -388,6 +391,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 	wchar_t wcstring[100];
 	WCHAR orig[14];
 	char nstring[100];
+	AConsisReplyDispensedOcc * pAconsisOcc;
 
 	memset(ConsisMessage, '0', 512);
 	ConsisMessage[61] = '\0';
@@ -439,6 +443,10 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 	m_EditBarCodeA.GetWindowTextW(orig,origsize);
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	location = 60 - (origsize - 1);
+
+	pAconsisOcc = (AConsisReplyDispensedOcc *)&(ConsisMessage[18]);
+
+	memset(pAconsisOcc->ArticleId,' ',30); //Clear leading zeros
 
 	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
 

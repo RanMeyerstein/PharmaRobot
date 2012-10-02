@@ -145,7 +145,7 @@ struct IConsisPmsResponseMessage{
 	char ExpiryDate[6];             //DDMMYY
 	char State[2];                  /*'00' article may be stored '01' article may not be stored 
 									  '02' article must be stored with expiry date */
-	char Text[4];                   // zeroed assuming no text - 3 characters + data + \0 Line < 70 characters Height < 18 characters
+	char Text[3];//char Text[4];                   // zeroed assuming no text - 3 characters + data + \0 Line < 70 characters Height < 18 characters
 	char ArticleId[30];             //Our ID
 };
 /************** I type End ***********/

@@ -19,7 +19,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 	PConsisPmsResponseMessage PResponseToConsis;
 	iConsisRequestMessage * piRequestMessage;
 	IConsisPmsResponseMessage IResponseToConsis;
-	wchar_t description[256], wcstring[115];;
+	wchar_t description[256], wcstring[256];
 
 	for (;;) //Run forever
 	{
@@ -47,7 +47,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 			if (buffer[0] == 'p')
 			{//handle a 'p' message here
 				mbstowcs_s(&convertedChars, wcstring, sizeof(pConsisRequestMessage) + 1, buffer, _TRUNCATE);
-				wcstring[sizeof(pConsisRequestMessage)] = L'/0';
+				wcstring[sizeof(pConsisRequestMessage)] = L'\0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 
 				ppRequestMessage = (pConsisRequestMessage *)buffer;
@@ -80,7 +80,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				memcpy(&(PResponseToConsis.ArticleId), ppRequestMessage->ArticleId, sizeof(PResponseToConsis.ArticleId));
 
 				mbstowcs_s(&convertedChars, wcstring, sizeof(PResponseToConsis) + 1, (char*)&PResponseToConsis, _TRUNCATE);
-				wcstring[sizeof(PResponseToConsis)] = L'/0';
+				wcstring[sizeof(PResponseToConsis)] = L'\0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 				//Send a response to CONSIS
 				pdialog->Consis.SendConsisMessage((char*)&PResponseToConsis, MessagePSize);
@@ -90,7 +90,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 			if (buffer[0] == 'i')
 			{//handle an 'i' message here
 				mbstowcs_s(&convertedChars, wcstring, sizeof(iConsisRequestMessage) + 1, buffer, _TRUNCATE);
-				wcstring[sizeof(iConsisRequestMessage)] = L'/0';
+				wcstring[sizeof(iConsisRequestMessage)] = L'\0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 
 				piRequestMessage = (iConsisRequestMessage *)buffer;
@@ -123,6 +123,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 
 				IResponseToConsis.RecordType = 'I';
 				//Get Article ID from request
+				memset((char*)(&(IResponseToConsis.ArticleId[0])), ' ', 30);
 				memcpy(&(IResponseToConsis.ArticleId), piRequestMessage->ArticleId, sizeof(IResponseToConsis.ArticleId));
 
 				//Get Order number from request
@@ -133,12 +134,13 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 					sizeof(IResponseToConsis.DemandingCounterUnitId));
 
 				//IResponseToConsis.Text[3] = '/0'; //Null terminator at the end of no text string
+				IResponseToConsis.Text[3] = ' ';
 				
 				mbstowcs_s(&convertedChars, wcstring, sizeof(IResponseToConsis) + 1, (char*)&IResponseToConsis, _TRUNCATE);
-				wcstring[sizeof(IResponseToConsis)] = L'/0';
+				wcstring[sizeof(IResponseToConsis)] = L'\0';
 				pdialog->m_listBoxMain.AddString(wcstring);
 				//Send a response to CONSIS
-				pdialog->Consis.SendConsisMessage((char*)&IResponseToConsis, MessagePSize);
+				pdialog->Consis.SendConsisMessage((char*)&IResponseToConsis, MessageISize);
 			}
 
 			//Ignore all other messages
