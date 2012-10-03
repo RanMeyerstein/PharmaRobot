@@ -95,7 +95,7 @@ BOOL ProRbtDb::FillProRbtDbLine (PRORBTPARAMS* pProRbtLine, int DBEntry)
 	}
 	else
 	{
-		if (pCounterSession->CurrentSessionId != SesId) 
+		if (pCounterSession->CurrentSessionId != (SesId-1)) 
 		{//Unexpected Session ID.
 			return FALSE;
 		}
@@ -415,6 +415,7 @@ QUERYRESPONSE ProRbtDb::HandleProRbtLine(PRORBTPARAMS* pProRbtLine, CPharmaRobot
 	if (FillProRbtDbLine(pProRbtLine, dBEntry) == FALSE) {
 			memset(ackemessage.Message, 0, ACK_MESSAGE_SIZE * sizeof(_TCHAR));
 			wsprintf(ackemessage.Message,L"Bad session ID");
+			InitProRbtDb();
 		return Q_ERROR; // Bad session ID intercepted
 	}
 
