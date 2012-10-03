@@ -260,11 +260,11 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 		{
 			if (totalQuantity)
 			{
-				wsprintf(ackemessage.Message,L"מצב מלאי\nמספר מזהה: %s\nמספר במלאי [%d]", description, totalQuantity);
+				wsprintf(ackemessage.Message,L"מצב מלאי\nסוג: %s\nמספר במלאי [%d]", description, totalQuantity);
 			}
 			else
 			{
-				wsprintf(ackemessage.Message,L"אין פריטים במלאי בעלי מספר מזהה \n%s", description);
+				wsprintf(ackemessage.Message,L"אין פריטים במלאי מסוג \n%s", description);
 			}
 		}
 		else
@@ -272,11 +272,11 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 			//Fill Ack message content
 			if (totalQuantity)
 			{
-				wsprintf(ackemessage.Message,L"מפריט מסוג\n%s\nקיימים %d\nבמלאי", cleanArticleID.GetString(), totalQuantity);
+				wsprintf(ackemessage.Message,L"מפריט בעל מספר מזהה\n%s\nקיימים %d\nבמלאי", cleanArticleID.GetString(), totalQuantity);
 			}
 			else
 			{
-				wsprintf(ackemessage.Message,L"פריט מסוג\n%s\nאינו קיים במלאי", cleanArticleID.GetString());
+				wsprintf(ackemessage.Message,L"פריט בעל מספר מזהה\n%s\nאינו קיים במלאי", cleanArticleID.GetString());
 			}
 		}
 

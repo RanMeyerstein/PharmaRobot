@@ -59,18 +59,19 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				//Clean leading zeroes
 				CString cleanArticleID;
 				cleanArticleID.SetString(articleID);
-				cleanArticleID.TrimLeft(L'0');
+				cleanArticleID.TrimLeft(L' ');
 				wsprintf(articleID,cleanArticleID.GetString());
 
 				//clean the message to CONSIS
 				memset ((void*)&PResponseToConsis, '0',sizeof(PResponseToConsis));
+				memset (&(PResponseToConsis.ArticleName),' ',sizeof(PResponseToConsis.ArticleName));
 
 				//Get Description from Yarpa SQL
 				if (pdialog->GetItemDescFromBarcode(articleID, description))
 				{//Got a description
 					char DescriptionInChar[40];
 					wcstombs(DescriptionInChar, description, 39);
-					memcpy(&(PResponseToConsis.ArticleName), DescriptionInChar, sizeof(PResponseToConsis.ArticleName));
+					sprintf(PResponseToConsis.ArticleName,DescriptionInChar);
 				}
 				else
 				{
@@ -110,8 +111,8 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				//State will be set to '00' by this action
 				memset ((void*)&IResponseToConsis, '0',sizeof(IResponseToConsis));
 
-				//check if message is "Receipt of goods" type.
-				if (piRequestMessage->OrderState[1] == '0')
+				//check if message is '04-New article (return) '05-New article (goods receipt) type.
+				if ((piRequestMessage->OrderState[1] == '4') || (piRequestMessage->OrderState[1] == '5'))
 				{
 					//Check if TA is 999 in Yarpa DB for this Barcode number
 					if (pdialog->GetTaFromYarpaByBarcode(articleID, &lisRobotItem))

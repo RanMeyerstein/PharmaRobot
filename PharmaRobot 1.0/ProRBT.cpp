@@ -211,18 +211,18 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 					/*Barcode taken from ProRBT parameters*/
 					StringFromProRbt = pCounterSession->RbtParamLinesArr[i + 1].Barcode;
 					len = StringFromProRbt.GetLength();
-					location = (60 * (i + 1)) - len;
+					location = (18 + (43 * (i + 1))) - len;
 					wchar_t barcodeSent[14];
 					wsprintf(barcodeSent, StringFromProRbt.GetString());
 					//Fill with blanks instaed of leading zeros
-					memset(&(pdialog->ConsisMessage[(60 * (i + 1)) - 30]),' ', 30);
+					memset(&(pdialog->ConsisMessage[(18 + (43 * (i + 1))) - 30]),' ', 30);
 					//Set the barcode
 					wcstombs(&(pdialog->ConsisMessage[location]), barcodeSent, len);
 
 					/*Quantity Taken from ProRBT parameters*/
 					StringFromProRbt = pCounterSession->RbtParamLinesArr[i + 1].Qty;
 					len = StringFromProRbt.GetLength();
-					location = (30 * (i + 1)) - len;
+					location = (18 + (12 * (i + 1))) - len;
 					wchar_t ReqQuantity[5];
 					wsprintf(ReqQuantity, StringFromProRbt.GetString());
 					wcstombs(&(pdialog->ConsisMessage[location]), ReqQuantity, len);
@@ -279,7 +279,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 					CString st = wcstring; pdialog->m_listBoxMain.AddString(st);
 					//TEMP RANM DEBUG
 
-				}while ( strcmp(orderState,"05") != 0 );//Waiting for quantity change by CONSIS to PMS
+				}while ( strcmp(orderState,"04") != 0 );//Supposed to wait for quantity change by CONSIS to PMS, but now wait for ready
 
 				//Extract number of locations
 				char numart[3];

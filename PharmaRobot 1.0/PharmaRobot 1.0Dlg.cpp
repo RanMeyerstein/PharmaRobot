@@ -482,6 +482,9 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 
 	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
 
+	/*Number of articles is one*/
+	ConsisMessage[17] = '1';
+
 	ConsisMessage[0] = 'A';
 
 	mbstowcs_s(&convertedChars, wcstring, 61, ConsisMessage, _TRUNCATE);
