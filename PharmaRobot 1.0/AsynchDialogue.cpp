@@ -60,6 +60,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				CString cleanArticleID;
 				cleanArticleID.SetString(articleID);
 				cleanArticleID.TrimLeft(L' ');
+				cleanArticleID.TrimLeft(L'0');
 				wsprintf(articleID,cleanArticleID.GetString());
 
 				//clean the message to CONSIS
@@ -105,6 +106,7 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 				CString cleanArticleID;
 				cleanArticleID.SetString(articleID);
 				cleanArticleID.TrimLeft(L'0');
+				cleanArticleID.TrimLeft(L' ');
 				wsprintf(articleID,cleanArticleID.GetString());
 
 				//clean the message to CONSIS
@@ -119,6 +121,10 @@ DWORD WINAPI AsynchDialogueListenerThread(CPharmaRobot10Dlg* pdialog)
 					{//Got a TA from SQL
 						if(lisRobotItem != 999)
 							IResponseToConsis.State[1]='1';//Article may not be stored as its not a ROBOT item according to YARPA DB
+					}
+					else
+					{
+						IResponseToConsis.State[1]='1';//Article may not be stored as not found in YARPA DB
 					}
 				}
 
