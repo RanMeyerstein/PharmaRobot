@@ -99,6 +99,7 @@ BOOL ProRbtDb::FillProRbtDbLine (PRORBTPARAMS* pProRbtLine, int DBEntry)
 		{//Unexpected Session ID.
 			return FALSE;
 		}
+		pCounterSession->CurrentSessionId = SesId;
 	}
 
 	//Session ID OK, Continue to add line to database
@@ -125,6 +126,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 	char nstring[100], buffer[MAX_CONSIS_MESSAGE_SIZE];
 	aConsisReplyHeader *paMesHeader;
 	aConsisReplyDispensedOcc* aocc;
+	AConsisReplyHeader * pARequestHeader;
 	REQUESTINTERMEIDATEDB InterMDb[MAXIMAL_NUM_LINES_SUPPORTED];
 	CString StringFromProRbt;
 
@@ -191,6 +193,8 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				memset(pdialog->ConsisMessage, '0', MessageASize);
 				pdialog->ConsisMessage[MessageASize] = '\0';
 
+				pARequestHeader = (AConsisReplyHeader *)pdialog->ConsisMessage;
+
 				/*Counter Unit taken from ProRBT parameters*/
 				StringFromProRbt = pCounterSession->RbtParamLinesArr[1].CounterUnit;//Take counter ID from first line
 				int len = StringFromProRbt.GetLength();
@@ -205,6 +209,17 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				location = 15 - len;
 				wsprintf(Source, StringFromProRbt.GetString());
 				wcstombs(&(pdialog->ConsisMessage[location]), Source, len);
+
+				/*Number of articles is one*/
+				char numart[3];
+				sprintf(numart,"%d",NumLinesInConsisMessage);
+				if (NumLinesInConsisMessage < 10){
+					pARequestHeader->NumberOfArticles[1] = numart[0];
+				}
+				else {
+					pARequestHeader->NumberOfArticles[0] = numart[0];
+					pARequestHeader->NumberOfArticles[1] = numart[1];
+				}
 
 				//Fill Barcode and Quantity per line 
 				for (int i = 0; i < NumLinesInConsisMessage ; i++){
@@ -264,7 +279,8 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 				do
 				{
 					MessageLength = sizeof(buffer);
-					pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000);
+					//Break out of while if message reception fails
+					if (pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000) == FALSE) break;
 
 					buffer[MessageLength] = '\0';
 					paMesHeader = (aConsisReplyHeader *)buffer;
@@ -279,10 +295,10 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 					CString st = wcstring; pdialog->m_listBoxMain.AddString(st);
 					//TEMP RANM DEBUG
 
-				}while ( strcmp(orderState,"04") != 0 );//Supposed to wait for quantity change by CONSIS to PMS, but now wait for ready
+				}while (( strcmp(orderState,"04") != 0 ) || (strcmp(orderState,"03") != 0));
+				//Supposed to wait for quantity change by CONSIS to PMS, but now wait for ready. If Cancelled stop all.
 
 				//Extract number of locations
-				char numart[3];
 				memcpy(numart, paMesHeader->NumberOfArticles, sizeof(paMesHeader->NumberOfArticles));
 				numart[2] = '\0';
 				int numArticles =  atoi(numart);
