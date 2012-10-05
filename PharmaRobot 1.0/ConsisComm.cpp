@@ -93,81 +93,90 @@ int ConsisComm::ConnectToConsis(char* clientName, CListBox * dlglistBox, CButton
 			m_dlglistBox->AddString(L"Loaded DLLs");
 
 			DllsLoaded = TRUE;
+
+			if ((hinstLibCD != NULL) || (hinstLibCD != NULL) )
+			{
+				ptCIGetLastSystemError = (CIGetLastSystemError)GetProcAddress(hinstLibCD, "CIGetLastSystemError"); 
+				ptCIGetSocket = (CIGetSocket)GetProcAddress(hinstLibCD, "CIGetSocket");
+				ptCISockPort = (CISockPort)GetProcAddress(hinstLibCD, "CISockPort");
+				ptCIOpen =  (CIOpen)GetProcAddress(hinstLibCD, "CIOpen");
+				ptCIClose = (CIClose)GetProcAddress(hinstLibCD, "CIClose");
+				ptCISendMessg = (CISendMessg)GetProcAddress(hinstLibCD, "CISendMessg");
+				ptCIRecvMessg = (CIRecvMessg)GetProcAddress(hinstLibCD, "CIRecvMessg");
+				ptCIRecvMessgNB = (CIRecvMessgNB)GetProcAddress(hinstLibCD, "CIRecvMessgNB");
+				ptCIDeleteResponse = (CIDeleteResponse)GetProcAddress(hinstLibCD, "CIDeleteResponse");
+
+				// If the function address is valid, call the function.
+
+				if (NULL != ptCIGetLastSystemError) 		{
+					OutputDebugString(L"Got ptCIGetLastSystemError function pointer\n");// 0x%x \n",ptCIGetLastSystemError); 
+				}
+				if (NULL != ptCIGetSocket) 		{
+					OutputDebugString(L"Got ptCIGetSocket function pointer\n");// 0x%x \n", ptCIGetSocket); 
+				}
+				if (NULL != ptCISockPort) 		{
+					OutputDebugString(L"Got ptCISockPort function pointer\n");// 0x%x \n", ptCISockPort); 
+				}
+				if (NULL != ptCIOpen) 		{
+					OutputDebugString(L"Got ptCIOpen function pointer\n");//0x%x \n",ptCIOpen); 
+				}
+				if (NULL != ptCIClose) 		{
+					OutputDebugString(L"Got ptCIClose function pointer\n");// 0x%x \n",ptCIClose); 
+				}
+				if (NULL != ptCISendMessg) 		{
+					OutputDebugString(L"Got ptCISendMessg function pointer\n");// 0x%x \n",ptCISendMessg); 
+				}
+				if (NULL != ptCIRecvMessg) 		{
+					OutputDebugString(L"Got ptCIRecvMessg function pointer \n");//0x%x \n",ptCIRecvMessg); 
+				}
+				if (NULL != ptCIRecvMessgNB) 		{
+					OutputDebugString(L"Got ptCIRecvMessgNB function pointer\n");// 0x%x \n",ptCIRecvMessgNB); 
+				}
+				if (NULL != ptCIDeleteResponse) 		{
+					OutputDebugString(L"Got ptCIClose function pointer \n");//0x%x \n",ptCIDeleteResponse); 
+				}
+			}
 		}
 
-		if ((hinstLibCD != NULL) || (hinstLibCD != NULL) )
-		{
-			ptCIGetLastSystemError = (CIGetLastSystemError)GetProcAddress(hinstLibCD, "CIGetLastSystemError"); 
-			ptCIGetSocket = (CIGetSocket)GetProcAddress(hinstLibCD, "CIGetSocket");
-			ptCISockPort = (CISockPort)GetProcAddress(hinstLibCD, "CISockPort");
-			ptCIOpen =  (CIOpen)GetProcAddress(hinstLibCD, "CIOpen");
-			ptCIClose = (CIClose)GetProcAddress(hinstLibCD, "CIClose");
-			ptCISendMessg = (CISendMessg)GetProcAddress(hinstLibCD, "CISendMessg");
-			ptCIRecvMessg = (CIRecvMessg)GetProcAddress(hinstLibCD, "CIRecvMessg");
-			ptCIRecvMessgNB = (CIRecvMessgNB)GetProcAddress(hinstLibCD, "CIRecvMessgNB");
-			ptCIDeleteResponse = (CIDeleteResponse)GetProcAddress(hinstLibCD, "CIDeleteResponse");
-
-			// If the function address is valid, call the function.
-
-			if (NULL != ptCIGetLastSystemError) 		{
-				OutputDebugString(L"Got ptCIGetLastSystemError function pointer\n");// 0x%x \n",ptCIGetLastSystemError); 
-			}
-			if (NULL != ptCIGetSocket) 		{
-				OutputDebugString(L"Got ptCIGetSocket function pointer\n");// 0x%x \n", ptCIGetSocket); 
-			}
-			if (NULL != ptCISockPort) 		{
-				OutputDebugString(L"Got ptCISockPort function pointer\n");// 0x%x \n", ptCISockPort); 
-			}
-			if (NULL != ptCIOpen) 		{
-				OutputDebugString(L"Got ptCIOpen function pointer\n");//0x%x \n",ptCIOpen); 
-			}
-			if (NULL != ptCIClose) 		{
-				OutputDebugString(L"Got ptCIClose function pointer\n");// 0x%x \n",ptCIClose); 
-			}
-			if (NULL != ptCISendMessg) 		{
-				OutputDebugString(L"Got ptCISendMessg function pointer\n");// 0x%x \n",ptCISendMessg); 
-			}
-			if (NULL != ptCIRecvMessg) 		{
-				OutputDebugString(L"Got ptCIRecvMessg function pointer \n");//0x%x \n",ptCIRecvMessg); 
-			}
-			if (NULL != ptCIRecvMessgNB) 		{
-				OutputDebugString(L"Got ptCIRecvMessgNB function pointer\n");// 0x%x \n",ptCIRecvMessgNB); 
-			}
-			if (NULL != ptCIDeleteResponse) 		{
-				OutputDebugString(L"Got ptCIClose function pointer \n");//0x%x \n",ptCIDeleteResponse); 
-			}
-		}
 		int ret = ptCIOpen(clinetname);
 		if (ret != 0 )		{
-			OutputDebugString(L"Opened successfuly with returned value\n");// = %d\n", ret);
+			dlglistBox->AddString(L"Opened CONSIS successfuly");
 		}
 		else		{
-			OutputDebugString(L"Failed to open Connection with Client\n");
+			dlglistBox->AddString(L"Failed to open Connection with Client\n");
 		}
 
 		if (remotebutton->GetCheck())
 		{
 			ret = ptCISockPort(8006);
 			if (ret != 0 )		{
-				OutputDebugString(L"Set Port to 8006\n");// = %d\n", ret);
+				dlglistBox->AddString(L"Set Port to 8006\n");// = %d\n", ret);
 			}
 			else		{
-				OutputDebugString(L"Failed to Set Port in CONSIS Server\n");
+				dlglistBox->AddString(L"Failed to Set Port in CONSIS Server\n");
 			}
 		}
 		else
 		{
 			ret = ptCISockPort(2766);
 			if (ret != 0 )		{
-				OutputDebugString(L"Set Port to 8006\n");// = %d\n", ret);
+				dlglistBox->AddString(L"Set Port to 2766\n");// = %d\n", ret);
 			}
 			else		{
-				OutputDebugString(L"Failed to Set Port in CONSIS Server\n");
+				dlglistBox->AddString(L"Failed to Set Port in CONSIS Server\n");
 			}
 		}
 
+		ret = ptCIOpen(clinetname);
+		if (ret != 0 )		{
+			OutputDebugString(L"Opened CONSIS successfuly");
+		}
+		else		{
+			OutputDebugString(L"Failed to open Connection with Client\n");
+		}
+
 		message = "R" "001" "C113" "004ASPIR";
-		rc = ptCISendMessg( message, strlen(message),10000);
+		rc = ptCISendMessg( message, strlen(message),1000);
 		if(rc!=0)
 		{
 			dlglistBox->AddString(L"sending R-message failed");//,rc);
