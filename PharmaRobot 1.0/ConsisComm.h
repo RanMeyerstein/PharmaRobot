@@ -11,7 +11,7 @@ __declspec(align(8))
 
 /**************** DISPENSE DIALOGUE *************/
 /************** A type Start Requested by PMS (this application) ***********/
-struct AConsisReplyHeader{
+struct AConsisRequestHeader{
 
 	char RecordType;
 	char OrderNumber[8];
@@ -21,7 +21,7 @@ struct AConsisReplyHeader{
 	char NumberOfArticles[2];
 };
 
-struct AConsisReplyDispensedOcc{
+struct AConsisRequestDispensedOcc{
 
 	char PZN[7];
 	char DispensedQuantity[5];

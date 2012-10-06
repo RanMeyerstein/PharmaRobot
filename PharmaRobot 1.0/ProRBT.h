@@ -12,6 +12,7 @@
 #define MAXIMAL_NUM_LINES_SUPPORTED 101
 #define MAXIMAL_NUM_COUNTERS_SUPPORTED 18
 #define ENTRY_NOT_FOUND -1
+#define INITIAL 99999
 
 typedef enum QUERYRESPONSE
 {
@@ -32,6 +33,19 @@ struct PRORBTPARAMSACK
 	_TCHAR Header[1],Type[1], Message[ACK_MESSAGE_SIZE];
 };
 
+struct REQUESTINTERMEIDATEDBENTRY {
+	wchar_t ArctileIdRequested[31];
+	int NumReq;
+	int NumDis;
+	int NumInStock;
+};
+
+struct REQUESTINTERMEIDATEDB {
+	REQUESTINTERMEIDATEDBENTRY Entry[MAXIMAL_NUM_LINES_SUPPORTED];
+	int sizeRequested;
+	int sizeInStock;
+	int firstIndexToStartfrom;
+};
 
 struct PRORBTCOUNTERSESSION{
 	int CurrentSessionId;
@@ -64,7 +78,8 @@ public:
 	BOOL FillProRbtDbLine (PRORBTPARAMS* pProRbtLine, int DBEntry);
 	QUERYRESPONSE HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSession, CPharmaRobot10Dlg* pdialog);
 	QUERYRESPONSE HandleProRbtLine(PRORBTPARAMS* pProRbtLine, CPharmaRobot10Dlg* pdialog);
-
+	BOOL BuildAndSendACommand(REQUESTINTERMEIDATEDB * pInteDb, CPharmaRobot10Dlg* pdialog, PRORBTPARAMS* pFirstLine);
+	BOOL CheckAmountInStock(int * retAmount, char* Barcode,CPharmaRobot10Dlg* pdialog);
 };
 
 #endif //__PRORBT_H

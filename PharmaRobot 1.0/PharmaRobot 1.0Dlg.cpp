@@ -391,7 +391,7 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 	wchar_t wcstring[100];
 	WCHAR orig[14];
 	char nstring[100];
-	AConsisReplyDispensedOcc * pAconsisOcc;
+	AConsisRequestDispensedOcc * pAconsisOcc;
 
 	memset(ConsisMessage, '0', 512);
 	ConsisMessage[61] = '\0';
@@ -444,9 +444,9 @@ void CPharmaRobot10Dlg::OnBnClickedButton3()
 	wcstombs_s(&convertedChars, nstring, origsize, orig , _TRUNCATE);
 	location = 60 - (origsize - 1);
 
-	pAconsisOcc = (AConsisReplyDispensedOcc *)&(ConsisMessage[18]);
+	pAconsisOcc = (AConsisRequestDispensedOcc *)&(ConsisMessage[18]);
 
-	memset(pAconsisOcc->ArticleId,' ',30); //Clear leading zeros
+	memset(pAconsisOcc->ArticleId,' ',30); //Clear leading zeros with blanks
 
 	memcpy((void*)&(ConsisMessage[location]), (void*) nstring, (origsize - 1));
 
