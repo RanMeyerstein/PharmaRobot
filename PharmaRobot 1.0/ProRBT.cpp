@@ -7,7 +7,7 @@ PRORBTPARAMSACK ackemessage;
 
 BOOL ProRbtDb::CheckAmountInStock(int * retAmount, char* Barcode, CPharmaRobot10Dlg* pdialog)
 {
-	size_t retsize, convertedChars, origsize;
+	size_t convertedChars, origsize;
 	CString st;
 	wchar_t wcstring[100];
 	BConsisStockRequest * pBrequest = (BConsisStockRequest *)pdialog->ConsisMessage;
@@ -64,23 +64,13 @@ BOOL ProRbtDb::CheckAmountInStock(int * retAmount, char* Barcode, CPharmaRobot10
 BOOL ProRbtDb::BuildAndSendACommand(REQUESTINTERMEIDATEDB * pInteDb, CPharmaRobot10Dlg* pdialog, PRORBTPARAMS* pFirstLine)
 {
 	AConsisRequestHeader * pARequestHeader;
-	int MessageASize, NumArticlesSent;
+	int MessageASize, indexInAcommand = 0;;
 	CString StringFromProRbt;
 	char nstring[100], numart[3];;
 	size_t convertedChars;
 
-	//Maximal allowed number of articles is 10
-	NumArticlesSent = 10;
-	if (pInteDb->sizeInStock < 10)
-	{
-		NumArticlesSent = pInteDb->sizeInStock;
-	}
-
-	//Message size is a function of the number of lines in this ten line session
-	MessageASize = 18 + (43*(NumArticlesSent));
-
-	memset(pdialog->ConsisMessage, '0', MessageASize);
-	pdialog->ConsisMessage[MessageASize] = '\0';
+	//Clear message
+	memset(pdialog->ConsisMessage, '0', 448); //18 header + 10 * 43 OCC size
 
 	pARequestHeader = (AConsisRequestHeader *)pdialog->ConsisMessage;
 
@@ -99,18 +89,7 @@ BOOL ProRbtDb::BuildAndSendACommand(REQUESTINTERMEIDATEDB * pInteDb, CPharmaRobo
 	wsprintf(Source, StringFromProRbt.GetString());
 	wcstombs(&(pdialog->ConsisMessage[location]), Source, len);
 
-	/* Number of articles */
-	sprintf(numart,"%d",NumArticlesSent);
-	if (NumArticlesSent < 10){
-		pARequestHeader->NumberOfArticles[1] = numart[0];
-	}
-	else {
-		pARequestHeader->NumberOfArticles[0] = numart[0];
-		pARequestHeader->NumberOfArticles[1] = numart[1];
-	}
-
 	//Fill Barcode and Quantity per entry in stock
-	int indexInAcommand = 0;
 	int i = pInteDb->firstIndexToStartfrom;
 	while (i < pInteDb->sizeRequested)
 	{
@@ -147,6 +126,20 @@ BOOL ProRbtDb::BuildAndSendACommand(REQUESTINTERMEIDATEDB * pInteDb, CPharmaRobo
 		if (indexInAcommand == 10) break; //Break from while, reached maximum allowed number of articles in 'A' command.
 	}
 
+	//Message size is a function of the number of articles in this 'A' command
+	MessageASize = 18 + (43*(indexInAcommand));
+	pdialog->ConsisMessage[indexInAcommand] = '\0';
+
+	/* Number of articles */
+	sprintf(numart,"%d",indexInAcommand);
+	if (indexInAcommand < 10){
+		pARequestHeader->NumberOfArticles[1] = numart[0];
+	}
+	else {
+		pARequestHeader->NumberOfArticles[0] = numart[0];
+		pARequestHeader->NumberOfArticles[1] = numart[1];
+	}
+
 	/*Order number Taken from GUI*/
 	pdialog->m_OrderNum++; if (pdialog->m_OrderNum > 99999999) pdialog->m_OrderNum = 0;//for every request increase number
 	WCHAR wideStr[10];
@@ -158,7 +151,6 @@ BOOL ProRbtDb::BuildAndSendACommand(REQUESTINTERMEIDATEDB * pInteDb, CPharmaRobo
 	wcstombs_s(&convertedChars, nstring, origsize, wideStr , _TRUNCATE);
 	location = 9 - (origsize - 1);
 	memcpy((void*)&(pdialog->ConsisMessage[location]), (void*) nstring, (origsize - 1));
-
 
 	/*Priority Taken from GUI*/
 	origsize = pdialog->m_EditPriority.GetWindowTextLengthW() + 1;
@@ -175,7 +167,7 @@ BOOL ProRbtDb::BuildAndSendACommand(REQUESTINTERMEIDATEDB * pInteDb, CPharmaRobo
 	mbstowcs_s(&convertedChars, wcstring, origsize, pdialog->ConsisMessage, _TRUNCATE);
 	CString st = wcstring; pdialog->m_listBoxMain.AddString(st);
 
-	/* Send A message to CONSIS */
+	/* Send 'A' message to CONSIS */
 	if (pdialog->Consis.SendConsisMessage(pdialog->ConsisMessage, MessageASize) == FALSE)
 		return FALSE;
 
@@ -293,11 +285,10 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 {
 	QUERYRESPONSE returnvalue = Q_NOACK;
 	size_t retsize, len, convertedChars;
-	int MessageLength, MessageASize, NumTenBatches;
-	char nstring[100], buffer[MAX_CONSIS_MESSAGE_SIZE], numart[3];
+	int MessageLength, NumTenBatches;
+	char buffer[MAX_CONSIS_MESSAGE_SIZE], numart[3];
 	aConsisReplyHeader *paMesHeader;
 	aConsisReplyDispensedOcc* aocc;
-	AConsisRequestHeader * pARequestHeader;
 	REQUESTINTERMEIDATEDB InterMDb;
 	CString StringFromProRbt, st;
 
@@ -387,9 +378,10 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 
 			while (NumTenBatches !=0)
 			{
-				//Build 'A' Message with Barcode from RBT parameters
+				//Build 'A' Message with Barcode from RBT parameters only if there are items left to send
 				if (InterMDb.sizeInStock > 0)
 				{
+					//This function will send the following 10 items in the database that are in stock
 					if (BuildAndSendACommand(&InterMDb, pdialog, &(pCounterSession->RbtParamLinesArr[1])) == FALSE)
 					{
 						//Error with Consis, Init entire Database
@@ -400,7 +392,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 						return Q_ERROR;
 					}		
 
-					if (InterMDb.sizeInStock > 10) InterMDb.sizeInStock -= 10; //10 less in stock
+					if (InterMDb.sizeInStock >= 10) InterMDb.sizeInStock -= 10; //10 less in stock
 
 					//Session state depends on the order state
 					//Last message Should be '4' - Ready, but Server returns '5', so that's what we'll wait for
