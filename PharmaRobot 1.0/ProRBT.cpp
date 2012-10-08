@@ -403,20 +403,26 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 					do
 					{
 						MessageLength = sizeof(buffer);
-						//Break out of while if message reception fails
-						if (pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000) == FALSE) break;
-
-						buffer[MessageLength] = '\0';
 						paMesHeader = (aConsisReplyHeader *)buffer;
+						//Break out of while if message reception fails
+						if (pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 10000) == FALSE)
+						{
+							st = L"Receive Consis Message 'a' timed out";
+							pdialog->m_listBoxMain.AddString(st);
+						}
+						else
+						{
+							buffer[MessageLength] = '\0';
 
-						memcpy(orderState, paMesHeader->OrderState, sizeof(paMesHeader->OrderState));
-						orderState[2] = '\0';
+							memcpy(orderState, paMesHeader->OrderState, sizeof(paMesHeader->OrderState));
+							orderState[2] = '\0';
 
-						//Print the reply of CONSIS 'a' to the dialog box
-						size_t origsize = strlen(buffer) + 1;
-						wchar_t wcstring[1000];
-						mbstowcs_s(&convertedChars, wcstring, origsize, buffer, _TRUNCATE);
-						st = wcstring; pdialog->m_listBoxMain.AddString(st);
+							//Print the reply of CONSIS 'a' to the dialog box
+							size_t origsize = strlen(buffer) + 1;
+							wchar_t wcstring[1000];
+							mbstowcs_s(&convertedChars, wcstring, origsize, buffer, _TRUNCATE);
+							st = wcstring; pdialog->m_listBoxMain.AddString(st);
+						}
 
 					}while ((paMesHeader->OrderState[1] != '4') && (paMesHeader->OrderState[1] != '3'));
 					//Supposed to wait for quantity change by CONSIS to PMS, but now wait for ready. If Cancelled stop all.
@@ -432,7 +438,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 						wsprintf(ackemessage.Message,L"תקלה בקבלת תשובה לבקשת ניפוק לשרת קונסיס");
 						return Q_ERROR;
 					}
-					else //The 'A' request was not cancelled, go through the reply
+					else//The 'A' request was not cancelled, go through the reply
 					{
 						//Extract number of locations
 						memcpy(numart, paMesHeader->NumberOfArticles, sizeof(paMesHeader->NumberOfArticles));
@@ -474,9 +480,9 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 									char dispenssedQuantity[6];
 									memcpy(dispenssedQuantity, aocc->DispensedQuantity, sizeof(aocc->DispensedQuantity));
 									dispenssedQuantity[5] = '\0';
-									//InterMDb.Entry[k].NumDis += atoi(dispenssedQuantity); //CONSIS don't support the dispenssed RANM BUG in consis!!!
-									//IF NO CANCELLED STATE RECEIVED THEN ALL ITEMS WERE DISPENSSED
-									InterMDb.Entry[k].NumDis = InterMDb.Entry[k].NumInStock; //CONSIS don't support the dispenssed RANM BUG in consis!!!
+									InterMDb.Entry[k].NumDis += atoi(dispenssedQuantity);
+									//IF NO CANCELLED STATE RECEIVED, THEN ALL ITEMS WERE DISPENSSED
+									//	InterMDb.Entry[k].NumDis = InterMDb.Entry[k].NumInStock;
 								}
 								k++;//serach for article ID in the intermediate database further
 							}
