@@ -261,6 +261,7 @@ int ConsisComm::SendStockQuery(char* MessageContent)
 
 int ConsisComm::SendDispnseCommand(char* MessageContent)
 {
+	aConsisReplyHeader *paMesHeader;
 	int rc = ptCISendMessg( MessageContent, strlen(MessageContent),3000);
 	if(rc!=0)
 		m_dlglistBox->AddString(L"sending dispense command failed");
@@ -270,13 +271,14 @@ int ConsisComm::SendDispnseCommand(char* MessageContent)
 	char pending;
 	int message_len = sizeof(message_buf);
 
+	paMesHeader = (aConsisReplyHeader *)message_buf;
+
 	do{
 		rc = ptCIRecvMessgNB( message_buf, &message_len, &pending,1000); //block at most 1 second
 		if(rc!=0)
 		{
-			m_dlglistBox->AddString(L"no message to receive");
-			break;
-
+			m_dlglistBox->AddString(L"Receive message timed out - Retrying");
+			//break;
 		}
 		else
 		{
@@ -286,7 +288,7 @@ int ConsisComm::SendDispnseCommand(char* MessageContent)
 			mbstowcs_s(&convertedChars, wcstring, message_len + 1, message_buf, _TRUNCATE);
 			m_dlglistBox->AddString(wcstring);
 		}
-	}while (message_buf[16] != '5');
+	}while ((paMesHeader->OrderState[1] != '4') && (paMesHeader->OrderState[1] != '3'));
 
 	return 1;
 }

@@ -405,7 +405,7 @@ QUERYRESPONSE ProRbtDb::HandleCounterIdEntry(PRORBTCOUNTERSESSION * pCounterSess
 						MessageLength = sizeof(buffer);
 						paMesHeader = (aConsisReplyHeader *)buffer;
 						//Break out of while if message reception fails
-						if (pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 10000) == FALSE)
+						if (pdialog->Consis.ReceiveConsisMessage(buffer, &MessageLength, 1000) == FALSE)
 						{
 							st = L"Receive Consis Message 'a' timed out";
 							pdialog->m_listBoxMain.AddString(st);
