@@ -11,6 +11,8 @@
 
 extern 	PRORBTPARAMSACK ackemessage;
 
+CPharmaRobot10Dlg* g_pdialog;
+
 ProRbtDb g_ProRbtDb;
 
 
@@ -288,13 +290,99 @@ QUERYRESPONSE HandleQueryCommand(PRORBTPARAMS * pProRbtParams, CPharmaRobot10Dlg
 	return Q_SENDACK;
 }
 
-DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
+DWORD WINAPI ClientSocketHandlerThread(SOCKET handle)
 {
 	QUERYRESPONSE res;
+	SOCKADDR_IN echoClntAddr;        // Client address
+	int clntLen;                     // Length of client address data structure 
 	char echoBuffer[sizeof(PRORBTPARAMS)]; // Buffer for echo string
-
 	PRORBTPARAMS * pProRoboParams = (PRORBTPARAMS *)echoBuffer;
+	// Get the size of the in-out parameter
+	clntLen = sizeof(echoClntAddr);
 
+	CSocket clntSock;
+	
+	clntSock.Attach(handle);
+
+	// Get the client's host name
+	if (!clntSock.GetPeerName((SOCKADDR*)&echoClntAddr, &clntLen)) {
+		//DieWithError("clntSock.GetPeerName() failed");
+	}
+
+	int recvMsgSize;              // Size of received message
+
+	// Recieve message from client 
+	recvMsgSize = clntSock.Receive(echoBuffer, sizeof(PRORBTPARAMS), 0);
+	if (recvMsgSize < 0) {
+		// DieWithError("clntSock.Receive() failed");
+	}
+
+	CString st;
+	if (pProRoboParams->Header[0] == '`')
+	{
+		g_pdialog->m_listBoxMain.ResetContent();
+		//st = "Received from Client: "; st += clientaddress; pdialog->m_listBoxMain.AddString(st);
+		st = "Counter Unit ID: "; st +=  pProRoboParams->CounterUnit; g_pdialog->m_listBoxMain.AddString(st);
+		st = "Directive: "; st += pProRoboParams->Directive; g_pdialog->m_listBoxMain.AddString(st);
+		st = "Bracode: "; st += pProRoboParams->Barcode; g_pdialog->m_listBoxMain.AddString(st);
+		st = "Qty: "; st += pProRoboParams->Qty; g_pdialog->m_listBoxMain.AddString(st);
+		st = "SessionId: "; st += pProRoboParams->SessionId; g_pdialog->m_listBoxMain.AddString(st);
+		st = "LineNum: "; st += pProRoboParams->LineNum; g_pdialog->m_listBoxMain.AddString(st);
+		st = "TotalLines: "; st += pProRoboParams->TotalLines; g_pdialog->m_listBoxMain.AddString(st);
+
+		if (pProRoboParams->Directive[0] == L'1')
+		{
+			res = HandleQueryCommand(pProRoboParams, g_pdialog);
+		}
+		else if (pProRoboParams->Directive[0] == L'2')
+		{
+			res = g_ProRbtDb.HandleProRbtLine(pProRoboParams, g_pdialog);
+		}
+		switch (res)
+		{
+		case Q_ERROR:
+			// Echo message back to client
+			ackemessage.Header[0] = L'`';
+			ackemessage.Type[0] = L'1';
+			clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
+			st.SetString(L"Ack Sent"); g_pdialog->m_listBoxMain.AddString(st);
+			break;
+
+		case Q_NOACK:
+			ackemessage.Header[0] = L'`';
+			ackemessage.Type[0] = L'0';
+			clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
+			break;
+
+		case Q_SENDACK:
+			// Echo message back to client
+			ackemessage.Header[0] = L'`';
+			ackemessage.Type[0] = L'1';
+			clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
+			st.SetString(L"Ack Sent"); g_pdialog->m_listBoxMain.AddString(st);
+			break ;
+		}
+
+	}
+	else
+	{
+		st.SetString(L"Bad Packet Content"); g_pdialog->m_listBoxMain.AddString(st);
+	}
+
+	clntSock.Close();
+
+	return 0;
+}
+
+
+
+DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
+{
+
+	HANDLE hSocketThread;
+	
+	g_pdialog = pdialog;
+	
 	// Initialize the AfxSocket
 	AfxSocketInit(NULL);
 
@@ -311,92 +399,23 @@ DWORD WINAPI SocketThread(CPharmaRobot10Dlg* pdialog)
 		//DieWithError("servSock.Listen() failed");
 	}
 
-
 	for(;;) { // Run forever
-		CSocket clntSock;                // Socket descriptor for client
-		SOCKADDR_IN echoClntAddr;        // Client address
-		int clntLen;                     // Length of client address data structure 
-
-		// Get the size of the in-out parameter
-		clntLen = sizeof(echoClntAddr);
+		
+		//create the socket
+		CSocket clntSock;
 
 		// Wait for a client to connect
 		if (!servSock.Accept(clntSock)) {
 			//DieWithError("servSock.Accept() failed");
 		}
 
+		//Detach the socket so the dedicated client thread may access it
+		SOCKET SockeHandler = clntSock.Detach();
+
 		// ClntSock is connected to a client!
+		hSocketThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ClientSocketHandlerThread, (LPVOID)SockeHandler, 0, NULL);
 
-		// Get the client's host name
-		if (!clntSock.GetPeerName((SOCKADDR*)&echoClntAddr, &clntLen)) {
-			//DieWithError("clntSock.GetPeerName() failed");
-		}
-
-		//_ultoa_s(echoClntAddr.sin_addr.S_un.S_addr,clientaddress,10);
-
-
-		int recvMsgSize;              // Size of received message
-
-		// Recieve message from client 
-		recvMsgSize = clntSock.Receive(echoBuffer, sizeof(PRORBTPARAMS), 0);
-		if (recvMsgSize < 0) {
-			// DieWithError("clntSock.Receive() failed");
-		}
-
-		CString st;
-		if (pProRoboParams->Header[0] == '`')
-		{
-			pdialog->m_listBoxMain.ResetContent();
-			//st = "Received from Client: "; st += clientaddress; pdialog->m_listBoxMain.AddString(st);
-			st = "Counter Unit ID: "; st +=  pProRoboParams->CounterUnit; pdialog->m_listBoxMain.AddString(st);
-			st = "Directive: "; st += pProRoboParams->Directive; pdialog->m_listBoxMain.AddString(st);
-			st = "Bracode: "; st += pProRoboParams->Barcode; pdialog->m_listBoxMain.AddString(st);
-			st = "Qty: "; st += pProRoboParams->Qty; pdialog->m_listBoxMain.AddString(st);
-			st = "SessionId: "; st += pProRoboParams->SessionId; pdialog->m_listBoxMain.AddString(st);
-			st = "LineNum: "; st += pProRoboParams->LineNum; pdialog->m_listBoxMain.AddString(st);
-			st = "TotalLines: "; st += pProRoboParams->TotalLines; pdialog->m_listBoxMain.AddString(st);
-			
-			if (pProRoboParams->Directive[0] == L'1')
-			{
-				res = HandleQueryCommand(pProRoboParams, pdialog);
-			}
-			else if (pProRoboParams->Directive[0] == L'2')
-			{
-				res = g_ProRbtDb.HandleProRbtLine(pProRoboParams, pdialog);
-				//res = HandleDispenseCommand(pProRoboParams, pdialog);
-
-			}
-			switch (res)
-			{
-			case Q_ERROR:
-				// Echo message back to client
-				ackemessage.Header[0] = L'`';
-				ackemessage.Type[0] = L'1';
-				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
-				st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
-				break;
-
-			case Q_NOACK:
-				ackemessage.Header[0] = L'`';
-				ackemessage.Type[0] = L'0';
-				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
-				break;
-
-			case Q_SENDACK:
-				// Echo message back to client
-				ackemessage.Header[0] = L'`';
-				ackemessage.Type[0] = L'1';
-				clntSock.Send((wchar_t*)ackemessage.Header, sizeof(ackemessage), 0);
-				st.SetString(L"Ack Sent"); pdialog->m_listBoxMain.AddString(st);
-				break ;
-			}
-
-		}
-		else
-		{
-			st.SetString(L"Bad Packet Content"); pdialog->m_listBoxMain.AddString(st);
-		}
-		clntSock.Close(); // Close client socket
+		CloseHandle(hSocketThread);
 
 	}
 
